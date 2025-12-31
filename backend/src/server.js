@@ -6,7 +6,14 @@
 
 // WICHTIG: dotenv MUSS VOR allen anderen Imports geladen werden!
 import dotenv from 'dotenv';
-dotenv.config();
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Lade .env aus dem backend-Verzeichnis
+dotenv.config({ path: join(__dirname, '..', '.env') });
 
 import express from 'express';
 import { createServer } from 'http';
