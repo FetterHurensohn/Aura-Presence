@@ -4,7 +4,6 @@
  */
 
 import * as Sentry from '@sentry/node';
-import { ProfilingIntegration } from '@sentry/profiling-node';
 
 /**
  * Initialisiert Sentry mit Backend-Konfiguration
@@ -29,13 +28,12 @@ export function initSentry() {
     // Sample-Rate für Performance-Monitoring
     tracesSampleRate: NODE_ENV === 'production' ? 0.1 : 1.0,
 
-    // Profiling (optional, nur in Production empfohlen)
-    profilesSampleRate: NODE_ENV === 'production' ? 0.1 : 0,
+    // Integrations
     integrations: [
-      new ProfilingIntegration(),
       // Automatische HTTP-Instrumentation
       new Sentry.Integrations.Http({ tracing: true }),
       // Express-Integration (wird in server.js aktiviert)
+      // Note: Profiling wurde entfernt (optional und verursacht Import-Probleme)
     ],
 
     // Before-Send Hook: Filtere sensitive Daten
