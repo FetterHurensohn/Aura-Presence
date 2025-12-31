@@ -10,19 +10,26 @@
 import faceMeshService from './MediaPipeFaceMeshService.js';
 import handsService from './MediaPipeHandsService.js';
 
-// Warte bis MediaPipe Libraries geladen sind (von index.html)
+// Warte bis MediaPipe Libraries geladen sind (von index.html mit defer)
 async function waitForMediaPipeLibraries() {
   let attempts = 0;
-  while ((!window.Pose || !window.Camera) && attempts < 100) {
+  const maxAttempts = 200; // 10 Sekunden (200 * 50ms)
+  
+  while ((!window.Pose || !window.Camera) && attempts < maxAttempts) {
     await new Promise(resolve => setTimeout(resolve, 50));
     attempts++;
+    
+    // Log alle 2 Sekunden
+    if (attempts % 40 === 0) {
+      console.log(`Warte auf MediaPipe Libraries... (${attempts * 50 / 1000}s)`);
+    }
   }
   
   if (!window.Pose || !window.Camera) {
     throw new Error('MediaPipe Libraries konnten nicht geladen werden. Bitte überprüfe deine Internetverbindung und lade die Seite neu.');
   }
   
-  console.log('✓ MediaPipe Libraries bereit');
+  console.log('✓ MediaPipe Libraries bereit (Pose, Camera)');
 }
 
 class MediaPipeOrchestratorService {
