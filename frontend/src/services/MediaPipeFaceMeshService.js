@@ -5,7 +5,7 @@
  * Alle Berechnungen erfolgen lokal im Browser!
  */
 
-import { FaceMesh } from '@mediapipe/face_mesh';
+import FaceMesh from '@mediapipe/face_mesh';
 
 class MediaPipeFaceMeshService {
   constructor() {

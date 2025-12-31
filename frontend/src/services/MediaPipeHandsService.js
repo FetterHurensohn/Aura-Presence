@@ -5,7 +5,7 @@
  * Alle Berechnungen erfolgen lokal im Browser!
  */
 
-import { Hands } from '@mediapipe/hands';
+import Hands from '@mediapipe/hands';
 
 class MediaPipeHandsService {
   constructor() {

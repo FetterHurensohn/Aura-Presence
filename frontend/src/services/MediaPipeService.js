@@ -5,8 +5,8 @@
  * Alle Berechnungen erfolgen lokal im Browser!
  */
 
-import { Pose } from '@mediapipe/pose';
-import { Camera } from '@mediapipe/camera_utils';
+import Pose from '@mediapipe/pose';
+import Camera from '@mediapipe/camera_utils';
 import faceMeshService from './MediaPipeFaceMeshService.js';
 import handsService from './MediaPipeHandsService.js';
 
