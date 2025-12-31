@@ -2,7 +2,7 @@
  * GDPR Service - Data Export & Account Deletion
  */
 
-import { apiService } from './apiService';
+import api from './apiService';
 import { showSuccess, showError } from './toastService';
 
 /**
@@ -10,7 +10,7 @@ import { showSuccess, showError } from './toastService';
  */
 export async function exportUserData() {
   try {
-    const response = await apiService.get('/api/gdpr/export');
+    const response = await api.get('/api/gdpr/export');
     
     // Erstelle Download-Link für JSON-Datei
     const blob = new Blob([JSON.stringify(response.data, null, 2)], { type: 'application/json' });
@@ -36,7 +36,7 @@ export async function exportUserData() {
  */
 export async function deleteAccount(password) {
   try {
-    const response = await apiService.delete('/api/gdpr/delete', {
+    const response = await api.delete('/api/gdpr/delete', {
       data: { password }
     });
     
@@ -53,7 +53,7 @@ export async function deleteAccount(password) {
  */
 export async function cancelAccountDeletion() {
   try {
-    const response = await apiService.post('/api/gdpr/cancel-deletion');
+    const response = await api.post('/api/gdpr/cancel-deletion');
     showSuccess('Account-Löschung wurde abgebrochen');
     return response.data;
   } catch (error) {
