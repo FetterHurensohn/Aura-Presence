@@ -4,10 +4,15 @@
  */
 
 import React, { useRef, useEffect, useState } from 'react';
-import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
-import { POSE_CONNECTIONS } from '@mediapipe/pose';
-import { FACEMESH_TESSELATION, FACEMESH_RIGHT_EYE, FACEMESH_LEFT_EYE, FACEMESH_LIPS } from '@mediapipe/face_mesh';
-import { HAND_CONNECTIONS } from '@mediapipe/hands';
+import * as drawingUtils from '@mediapipe/drawing_utils';
+import * as poseModule from '@mediapipe/pose';
+import * as faceMeshModule from '@mediapipe/face_mesh';
+import * as handsModule from '@mediapipe/hands';
+
+const { drawConnectors, drawLandmarks } = drawingUtils;
+const { POSE_CONNECTIONS } = poseModule;
+const { FACEMESH_TESSELATION, FACEMESH_RIGHT_EYE, FACEMESH_LEFT_EYE, FACEMESH_LIPS } = faceMeshModule;
+const { HAND_CONNECTIONS } = handsModule;
 import mediaPipeService from '../services/MediaPipeService';
 import { UnifiedFeatureExtractor } from '../services/FeatureExtractor';
 import { showError, showWarning } from '../services/toastService';
