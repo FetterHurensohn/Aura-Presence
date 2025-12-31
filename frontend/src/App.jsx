@@ -104,6 +104,7 @@ function App() {
           <Footer />
         </div>
       </Router>
+    </ConsentManager>
     </ErrorBoundary>
   );
 }

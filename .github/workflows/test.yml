@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18.x'
     
@@ -70,9 +70,9 @@ jobs:
 #       JWT_SECRET: test-secret-for-ci-only-min-32-chars
 #       NODE_ENV: test
 #     steps:
-#     - uses: actions/checkout@v3
+#     - uses: actions/checkout@v4
 #     - name: Setup Node.js ${{ matrix.node-version }}
-#       uses: actions/setup-node@v3
+#       uses: actions/setup-node@v4
 #       with:
 #         node-version: ${{ matrix.node-version }}
 #     - name: Install Backend Dependencies
@@ -94,9 +94,9 @@ jobs:
 #     name: Frontend Build
 #     runs-on: ubuntu-latest
 #     steps:
-#     - uses: actions/checkout@v3
+#     - uses: actions/checkout@v4
 #     - name: Setup Node.js
-#       uses: actions/setup-node@v3
+#       uses: actions/setup-node@v4
 #       with:
 #         node-version: '18.x'
 #     - name: Install Frontend Dependencies
