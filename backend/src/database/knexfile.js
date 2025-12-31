@@ -15,6 +15,16 @@ const __dirname = dirname(__filename);
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
+// Erstelle data-Verzeichnis sofort beim Modul-Import
+const defaultDataPath = join(__dirname, '../../data');
+try {
+  mkdirSync(defaultDataPath, { recursive: true });
+} catch (err) {
+  if (err.code !== 'EEXIST') {
+    console.warn('Konnte data-Verzeichnis nicht erstellen:', err.message);
+  }
+}
+
 /**
  * Bestimme DB-Client basierend auf DATABASE_URL
  */
@@ -51,18 +61,15 @@ function getConfig() {
     }
   }
   
-  // Stelle sicher, dass das data-Verzeichnis existiert (außer für :memory:)
-  if (sqlitePath !== ':memory:') {
+  // Stelle sicher, dass Custom-Path-Verzeichnis existiert
+  if (sqlitePath !== ':memory:' && DATABASE_URL && DATABASE_URL.startsWith('sqlite:')) {
     const dataDir = dirname(sqlitePath);
-    
-    // Nur versuchen zu erstellen wenn Pfad absolut oder gültig ist
-    if (dataDir && dataDir !== '.' && dataDir !== sqlitePath) {
+    if (dataDir && dataDir !== sqlitePath) {
       try {
         mkdirSync(dataDir, { recursive: true });
       } catch (err) {
-        // Ignoriere Fehler - db.js wird das Verzeichnis auch erstellen
-        if (err.code !== 'EEXIST' && err.code !== 'ENOENT') {
-          console.error('Warnung beim Erstellen des data-Verzeichnisses:', err.message);
+        if (err.code !== 'EEXIST') {
+          console.warn('Konnte Custom-Verzeichnis nicht erstellen:', err.message);
         }
       }
     }
