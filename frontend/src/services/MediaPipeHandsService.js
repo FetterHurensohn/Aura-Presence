@@ -27,7 +27,7 @@ class MediaPipeHandsService {
    */
   async initialize(onResults) {
     if (this.isInitialized) {
-      console.warn('MediaPipe Hands bereits initialisiert');
+      // Bereits initialisiert - nichts zu tun
       return;
     }
 

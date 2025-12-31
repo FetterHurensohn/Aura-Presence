@@ -10,26 +10,19 @@
 import faceMeshService from './MediaPipeFaceMeshService.js';
 import handsService from './MediaPipeHandsService.js';
 
-// Warte bis MediaPipe Libraries geladen sind (von index.html mit defer)
+// Warte bis MediaPipe Libraries geladen sind (von index.html)
 async function waitForMediaPipeLibraries() {
   let attempts = 0;
-  const maxAttempts = 200; // 10 Sekunden (200 * 50ms)
-  
-  while ((!window.Pose || !window.Camera) && attempts < maxAttempts) {
+  while ((!window.Pose || !window.Camera) && attempts < 100) {
     await new Promise(resolve => setTimeout(resolve, 50));
     attempts++;
-    
-    // Log alle 2 Sekunden
-    if (attempts % 40 === 0) {
-      console.log(`Warte auf MediaPipe Libraries... (${attempts * 50 / 1000}s)`);
-    }
   }
   
   if (!window.Pose || !window.Camera) {
     throw new Error('MediaPipe Libraries konnten nicht geladen werden. Bitte überprüfe deine Internetverbindung und lade die Seite neu.');
   }
   
-  console.log('✓ MediaPipe Libraries bereit (Pose, Camera)');
+  console.log('✓ MediaPipe Libraries bereit');
 }
 
 class MediaPipeOrchestratorService {
@@ -37,6 +30,7 @@ class MediaPipeOrchestratorService {
     this.pose = null;
     this.camera = null;
     this.isInitialized = false;
+    this.isPoseReady = false; // WICHTIG: Erst true, wenn Assets geladen sind
     
     // Results Storage für Unified Feature Extraction
     this.latestResults = {
@@ -68,7 +62,7 @@ class MediaPipeOrchestratorService {
    */
   async initialize(videoElement, onUnifiedResults) {
     if (this.isInitialized) {
-      console.warn('MediaPipe Orchestrator bereits initialisiert');
+      // Bereits initialisiert - nichts zu tun
       return;
     }
 
@@ -93,6 +87,11 @@ class MediaPipeOrchestratorService {
       });
 
       this.pose.onResults((results) => {
+        // Markiere Pose als bereit, wenn erste Results kommen (Assets geladen)
+        if (!this.isPoseReady) {
+          this.isPoseReady = true;
+          console.log('✓ MediaPipe Pose bereit (Assets geladen)');
+        }
         this.latestResults.pose = results;
         this.emitUnifiedResults();
       });
@@ -163,7 +162,8 @@ class MediaPipeOrchestratorService {
     try {
       switch (currentModel) {
         case 'pose':
-          if (this.pose) {
+          // Nur senden, wenn Pose bereit ist (Assets geladen)
+          if (this.pose && this.isPoseReady) {
             await this.pose.send({ image: imageSource });
           }
           break;
@@ -179,7 +179,12 @@ class MediaPipeOrchestratorService {
           break;
       }
     } catch (error) {
-      console.error(`Fehler beim Verarbeiten von ${currentModel}:`, error);
+      // Unterdrücke Fehler während Pose lädt (normal beim Start)
+      if (!this.isPoseReady && currentModel === 'pose') {
+        // Still loading, ignore error
+      } else {
+        console.error(`Fehler beim Verarbeiten von ${currentModel}:`, error);
+      }
     }
 
     // Rotiere zum nächsten Model
@@ -228,6 +233,7 @@ class MediaPipeOrchestratorService {
     
     this.camera = null;
     this.isInitialized = false;
+    this.isPoseReady = false; // Reset Pose-Ready-Flag
     this.onUnifiedResultsCallback = null;
     this.latestResults = { pose: null, faceMesh: null, hands: null };
     

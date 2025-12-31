@@ -27,7 +27,7 @@ class MediaPipeFaceMeshService {
    */
   async initialize(onResults) {
     if (this.isInitialized) {
-      console.warn('MediaPipe Face Mesh bereits initialisiert');
+      // Bereits initialisiert - nichts zu tun
       return;
     }
 
