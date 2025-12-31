@@ -1,0 +1,52 @@
+{
+  "appId": "com.aurapresence.app",
+  "appName": "Aura Presence",
+  "webDir": "frontend/dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#1a1a2e",
+      "showSpinner": true,
+      "androidSpinnerStyle": "small",
+      "iosSpinnerStyle": "small",
+      "spinnerColor": "#6c5ce7"
+    },
+    "Camera": {
+      "permissions": [
+        "camera",
+        "photos"
+      ]
+    },
+    "Microphone": {
+      "permissions": [
+        "microphone"
+      ]
+    }
+  },
+  "android": {
+    "allowMixedContent": true,
+    "permissions": [
+      "android.permission.CAMERA",
+      "android.permission.RECORD_AUDIO",
+      "android.permission.MODIFY_AUDIO_SETTINGS",
+      "android.permission.INTERNET",
+      "android.permission.ACCESS_NETWORK_STATE"
+    ]
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "permissions": [
+      "NSCameraUsageDescription",
+      "NSMicrophoneUsageDescription"
+    ]
+  }
+}
+
+
+
+
+

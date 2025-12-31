@@ -1,0 +1,134 @@
+{
+  "checkoutCompleted": {
+    "id": "evt_test_checkout_completed_123",
+    "object": "event",
+    "type": "checkout.session.completed",
+    "data": {
+      "object": {
+        "id": "cs_test_123",
+        "object": "checkout.session",
+        "customer": "cus_test_123",
+        "client_reference_id": "1",
+        "subscription": "sub_test_123",
+        "payment_status": "paid",
+        "metadata": {
+          "userId": "1"
+        }
+      }
+    }
+  },
+  
+  "subscriptionCreated": {
+    "id": "evt_test_subscription_created_123",
+    "object": "event",
+    "type": "customer.subscription.created",
+    "data": {
+      "object": {
+        "id": "sub_test_123",
+        "object": "subscription",
+        "customer": "cus_test_123",
+        "status": "active",
+        "current_period_end": 1735689600,
+        "items": {
+          "data": [
+            {
+              "price": {
+                "id": "price_test_123"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  
+  "subscriptionUpdated": {
+    "id": "evt_test_subscription_updated_123",
+    "object": "event",
+    "type": "customer.subscription.updated",
+    "data": {
+      "object": {
+        "id": "sub_test_123",
+        "object": "subscription",
+        "customer": "cus_test_123",
+        "status": "active",
+        "current_period_end": 1735689600,
+        "items": {
+          "data": [
+            {
+              "price": {
+                "id": "price_test_123"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  
+  "subscriptionDeleted": {
+    "id": "evt_test_subscription_deleted_123",
+    "object": "event",
+    "type": "customer.subscription.deleted",
+    "data": {
+      "object": {
+        "id": "sub_test_123",
+        "object": "subscription",
+        "customer": "cus_test_123",
+        "status": "canceled"
+      }
+    }
+  },
+  
+  "invoicePaymentSucceeded": {
+    "id": "evt_test_invoice_succeeded_123",
+    "object": "event",
+    "type": "invoice.payment_succeeded",
+    "data": {
+      "object": {
+        "id": "in_test_123",
+        "object": "invoice",
+        "customer": "cus_test_123",
+        "amount_paid": 1999,
+        "currency": "eur",
+        "paid": true
+      }
+    }
+  },
+  
+  "invoicePaymentFailed": {
+    "id": "evt_test_invoice_failed_123",
+    "object": "event",
+    "type": "invoice.payment_failed",
+    "data": {
+      "object": {
+        "id": "in_test_456",
+        "object": "invoice",
+        "customer": "cus_test_123",
+        "amount_due": 1999,
+        "currency": "eur",
+        "paid": false,
+        "attempt_count": 1
+      }
+    }
+  },
+  
+  "customerDeleted": {
+    "id": "evt_test_customer_deleted_123",
+    "object": "event",
+    "type": "customer.deleted",
+    "data": {
+      "object": {
+        "id": "cus_test_123",
+        "object": "customer",
+        "email": "test@example.com",
+        "deleted": true
+      }
+    }
+  }
+}
+
+
+
+
+

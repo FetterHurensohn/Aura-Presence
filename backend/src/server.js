@@ -1,0 +1,173 @@
+/**
+ * Aura Presence Backend Server
+ * Hauptserver mit Express, Socket.IO für WebRTC-Signaling,
+ * Auth, Analyse und Stripe-Integration
+ */
+
+import dotenv from 'dotenv';
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { initializeDatabase } from './database/db.js';
+import logger from './utils/logger.js';
+
+// Sentry Error-Tracking
+import { 
+  initSentry, 
+  sentryRequestHandler, 
+  sentryErrorHandler 
+} from './utils/sentry.js';
+
+// Routes
+import authRoutes from './routes/auth.js';
+import analyzeRoutes from './routes/analyze.js';
+import subscriptionRoutes from './routes/subscription.js';
+import gdprRoutes from './routes/gdpr.js';
+import sessionsRoutes from './routes/sessions.js';
+
+// Socket.IO Services & Middleware
+import signalingService from './services/signalingService.js';
+import socketAuthMiddleware from './middleware/socketAuth.js';
+
+dotenv.config();
+
+// Initialisiere Sentry DIREKT nach dotenv.config()
+initSentry();
+
+const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+const PORT = process.env.PORT || 3001;
+
+// Middleware
+// Sentry Request Handler MUSS vor allen anderen Middlewares stehen
+app.use(sentryRequestHandler());
+
+app.use(helmet());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Rate Limiting für alle Routen
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 Minuten
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  message: 'Zu viele Anfragen von dieser IP, bitte später erneut versuchen.'
+});
+app.use(limiter);
+
+// Request Logging
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.path}`, {
+    ip: req.ip,
+    userAgent: req.get('user-agent')
+  });
+  next();
+});
+
+// Health Check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV
+  });
+});
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/analyze', analyzeRoutes);
+app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/gdpr', gdprRoutes);
+app.use('/api/sessions', sessionsRoutes);
+
+// WebRTC Signaling mit Socket.IO
+// Auth-Middleware für Socket-Connections
+io.use(socketAuthMiddleware);
+
+// Initialisiere Signaling-Service
+signalingService.initialize(io);
+
+// Optional: Signaling-Stats-Endpoint (für Monitoring)
+app.get('/api/signaling/stats', (req, res) => {
+  const stats = signalingService.getStats();
+  res.json(stats);
+});
+
+// Sentry Error Handler MUSS vor eigenem Error-Handler stehen
+app.use(sentryErrorHandler());
+
+// Global Error Handler (mit standardisiertem Format)
+app.use((err, req, res, next) => {
+  logger.error('Unbehandelter Fehler:', {
+    error: err.message,
+    stack: err.stack,
+    path: req.path,
+    method: req.method
+  });
+  
+  // Standardisiertes Error-Format: { error, message?, code? }
+  const statusCode = err.statusCode || err.status || 500;
+  const errorResponse = {
+    error: process.env.NODE_ENV === 'production' 
+      ? 'Ein interner Fehler ist aufgetreten' 
+      : err.message || 'Interner Server-Fehler',
+    message: err.userMessage || undefined, // Optional: Nutzerfreundliche Message
+    code: err.code || undefined, // Optional: Error-Code (z.B. "EMAIL_EXISTS")
+  };
+
+  // Stack-Trace nur in Development
+  if (process.env.NODE_ENV !== 'production') {
+    errorResponse.stack = err.stack;
+  }
+
+  res.status(statusCode).json(errorResponse);
+});
+
+// 404 Handler (mit standardisiertem Format)
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Route nicht gefunden',
+    message: `Die angefragte Route ${req.path} existiert nicht.`,
+    code: 'NOT_FOUND'
+  });
+});
+
+// Datenbank initialisieren und Server starten
+async function startServer() {
+  try {
+    await initializeDatabase();
+    logger.info('Datenbank erfolgreich initialisiert');
+
+    httpServer.listen(PORT, () => {
+      logger.info(`🚀 Server läuft auf Port ${PORT}`);
+      logger.info(`📱 Frontend-URL: ${process.env.FRONTEND_URL}`);
+      logger.info(`🌍 Environment: ${process.env.NODE_ENV}`);
+      logger.info(`🔐 JWT-Auth: ${process.env.JWT_SECRET ? '✓' : '✗'}`);
+      logger.info(`🤖 OpenAI: ${process.env.OPENAI_API_KEY ? '✓ (aktiv)' : '✗ (Mock-Modus)'}`);
+      logger.info(`💳 Stripe: ${process.env.STRIPE_SECRET_KEY ? '✓' : '✗'}`);
+    });
+  } catch (error) {
+    logger.error('Fehler beim Server-Start:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
+
+export { app, io };
+

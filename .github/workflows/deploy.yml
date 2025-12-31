@@ -1,0 +1,54 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+    
+    - name: Install Dependencies
+      run: npm run install:all
+    
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Deploy to Server
+      # Beispiel: SCP zu Server
+      # In Production würde hier z.B. Docker Push, AWS Deploy, etc. stehen
+      run: |
+        echo "Deployment würde hier erfolgen"
+        echo "Beispiel: rsync, scp, docker push, kubectl apply, etc."
+    
+    # Optional: Deploy-Benachrichtigung
+    - name: Notify on Success
+      if: success()
+      run: |
+        echo "✅ Deployment erfolgreich!"
+        # Slack/Discord Webhook hier
+    
+    - name: Notify on Failure
+      if: failure()
+      run: |
+        echo "❌ Deployment fehlgeschlagen!"
+        # Slack/Discord Webhook hier
+
+
+
+
+

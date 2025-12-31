@@ -1,0 +1,145 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install Dependencies
+        run: npm run install:all
+      
+      - name: Run Backend Tests
+        run: |
+          cd backend
+          npm test
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-secret-for-ci-min-32-chars-long
+          DATABASE_URL: sqlite://./test.db
+      
+      - name: Run Frontend Build Test
+        run: |
+          cd frontend
+          npm run build
+
+  deploy-backend:
+    name: Deploy Backend to Railway
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Railway
+        run: |
+          echo "🚀 Deploying backend to Railway..."
+          echo "Railway CLI deployment would happen here"
+          echo "Alternatively: Railway auto-deploys from GitHub integration"
+        # Railway deployment via GitHub integration (empfohlen)
+        # Oder via Railway CLI:
+        # - name: Install Railway CLI
+        #   run: npm install -g @railway/cli
+        # - name: Deploy
+        #   run: railway up
+        #   env:
+        #     RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  deploy-frontend:
+    name: Deploy Frontend to Vercel
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Vercel
+        run: |
+          echo "🚀 Deploying frontend to Vercel..."
+          echo "Vercel auto-deploys from GitHub integration"
+        # Vercel deployment via GitHub integration (empfohlen)
+        # Oder via Vercel CLI:
+        # - name: Install Vercel CLI
+        #   run: npm install -g vercel
+        # - name: Deploy
+        #   run: vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+  smoke-test:
+    name: Smoke Test Production
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Health Check Backend
+        run: |
+          echo "🏥 Running health check..."
+          curl -f https://api.aurapresence.com/health || exit 1
+      
+      - name: Health Check Frontend
+        run: |
+          echo "🏥 Checking frontend..."
+          curl -f https://app.aurapresence.com || exit 1
+      
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "✅ Deployment successful!"
+          echo "Backend: https://api.aurapresence.com"
+          echo "Frontend: https://app.aurapresence.com"
+      
+      - name: Notify Failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed! Check logs."
+          exit 1
+
+# ============================================
+# SETUP INSTRUCTIONS
+# ============================================
+#
+# 1. GitHub Secrets setzen:
+#    - RAILWAY_TOKEN (falls Railway CLI verwendet wird)
+#    - VERCEL_TOKEN (falls Vercel CLI verwendet wird)
+#
+# 2. Railway Setup:
+#    - Projekt in Railway erstellen
+#    - GitHub-Repository verbinden
+#    - Environment Variables setzen (siehe .env.production.example)
+#    - Auto-Deploy aktivieren
+#
+# 3. Vercel Setup:
+#    - Projekt in Vercel erstellen
+#    - GitHub-Repository verbinden
+#    - Environment Variables setzen (siehe frontend/.env.production)
+#    - Auto-Deploy aktivieren
+#
+# 4. Domain Setup:
+#    - Custom Domain in Railway hinzufügen (api.aurapresence.com)
+#    - Custom Domain in Vercel hinzufügen (app.aurapresence.com)
+#    - DNS CNAME Records setzen
+#
+# 5. First Deployment:
+#    - Push to main branch
+#    - Workflow läuft automatisch
+#    - Prüfe Logs in GitHub Actions
+#    - Smoke Tests müssen grün sein
+

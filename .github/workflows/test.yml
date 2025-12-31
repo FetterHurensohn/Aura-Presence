@@ -1,0 +1,189 @@
+name: Test & Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    env:
+      JWT_SECRET: test-secret-for-ci-only-min-32-chars
+      NODE_ENV: test
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install Backend Dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Create Test .env
+      run: |
+        cd backend
+        echo "NODE_ENV=test" > .env
+        echo "JWT_SECRET=test-secret-for-ci-only-min-32-chars" >> .env
+        echo "DB_PATH=:memory:" >> .env
+    
+    - name: Run Backend Tests
+      run: |
+        cd backend
+        npm test
+    
+    - name: Upload Coverage
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./backend/coverage/lcov.info
+        flags: backend
+
+  database-migration-test:
+    name: PostgreSQL Migration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aura_presence_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/aura_presence_test
+      JWT_SECRET: test-secret-for-ci-only-min-32-chars
+      NODE_ENV: test
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+    
+    - name: Install Dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Run Migrations
+      run: |
+        cd backend
+        npm run migrate
+    
+    - name: Verify Schema
+      run: |
+        PGPASSWORD=postgres psql -h localhost -U postgres -d aura_presence_test -c "\dt"
+    
+    - name: Run Tests (PostgreSQL)
+      run: |
+        cd backend
+        npm test
+    
+    - name: Test Rollback
+      run: |
+        cd backend
+        npm run migrate:rollback
+        npm run migrate
+
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install Frontend Dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-dist
+        path: frontend/dist/
+        retention-days: 7
+
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+    
+    - name: Install Dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Run ESLint
+      run: |
+        cd frontend
+        npm run lint || true
+      continue-on-error: true
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+    
+    - name: Backend Security Audit
+      run: |
+        cd backend
+        npm audit --audit-level=moderate
+      continue-on-error: true
+    
+    - name: Frontend Security Audit
+      run: |
+        cd frontend
+        npm audit --audit-level=moderate
+      continue-on-error: true
+

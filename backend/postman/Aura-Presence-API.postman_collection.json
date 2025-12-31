@@ -1,0 +1,391 @@
+{
+  "info": {
+    "name": "Aura Presence API",
+    "description": "Complete API collection for Aura Presence Backend\n\n## Setup\n1. Import this collection into Postman\n2. Import the environment file (Aura-Presence.postman_environment.json)\n3. Set your BASE_URL, JWT_SECRET in environment\n4. Run Auth → Register or Login to get token\n5. Token is auto-saved to {{authToken}} variable\n\n## Endpoints\n- **Auth**: Register, Login, Refresh Token, Get User\n- **Analyze**: Submit video analysis with MediaPipe features\n- **Subscription**: Create Checkout Session, Handle Webhooks\n- **Health**: Server health check\n- **Signaling**: WebRTC stats",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "aura-presence-v1"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Get Health Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/health",
+              "host": ["{{BASE_URL}}"],
+              "path": ["health"]
+            },
+            "description": "Check if the server is running and get system info"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.environment.set('authToken', jsonData.token);",
+                  "        console.log('Token saved:', jsonData.token);",
+                  "    }",
+                  "    if (jsonData.refreshToken) {",
+                  "        pm.environment.set('refreshToken', jsonData.refreshToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test1234\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/register",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new user with email and password.\n\n**Requirements:**\n- Email must be valid\n- Password must be at least 6 characters\n\n**Response:**\n- `token`: JWT access token (7 days)\n- `refreshToken`: Refresh token for token renewal\n- `user`: User object"
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.environment.set('authToken', jsonData.token);",
+                  "        console.log('Token saved:', jsonData.token);",
+                  "    }",
+                  "    if (jsonData.refreshToken) {",
+                  "        pm.environment.set('refreshToken', jsonData.refreshToken);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test1234\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/login",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with existing credentials.\n\n**Response:**\n- `token`: JWT access token\n- `refreshToken`: Refresh token\n- `user`: User object with subscription info"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/me",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Get current authenticated user info.\n\n**Requires:** Valid JWT token in Authorization header"
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.environment.set('authToken', jsonData.token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/auth/refresh",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token.\n\n**Body:**\n- `refreshToken`: The refresh token from login/register"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analysis",
+      "item": [
+        {
+          "name": "Submit Analysis (Minimal)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"features\": {\n    \"posture_angle\": 5\n  }\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/analyze",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "analyze"]
+            },
+            "description": "Submit minimal analysis with just posture data.\n\n**Requires:** JWT token\n\n**Body:**\n- `features.posture_angle`: Number (degrees from vertical)"
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Analysis (Complete)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"features\": {\n    \"posture_angle\": 5,\n    \"eye_contact_quality\": 0.85,\n    \"blink_rate\": 18,\n    \"facial_expression\": \"smiling\",\n    \"head_pose\": {\n      \"pitch\": 5,\n      \"yaw\": -3,\n      \"roll\": 1\n    },\n    \"hands_detected\": [\"left\", \"right\"],\n    \"left_hand_gesture\": \"open\",\n    \"right_hand_gesture\": \"pointing\",\n    \"hand_movement_speed\": 0.25\n  }\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/analyze",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "analyze"]
+            },
+            "description": "Submit complete analysis with all MediaPipe features.\n\n**All Features:**\n- `posture_angle`: Posture deviation (degrees)\n- `eye_contact_quality`: 0-1 score\n- `blink_rate`: Blinks per minute\n- `facial_expression`: string (smiling, neutral, frowning)\n- `head_pose`: {pitch, yaw, roll} in degrees\n- `hands_detected`: Array of detected hands\n- `left_hand_gesture`: Gesture type\n- `right_hand_gesture`: Gesture type\n- `hand_movement_speed`: Movement speed (0-1)\n\n**Response:**\n- `evaluation`: Rule-based behavioral flags\n- `interpretation`: AI-generated feedback text\n- `timestamp`: Analysis timestamp"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Subscription",
+      "item": [
+        {
+          "name": "Create Checkout Session",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priceId\": \"price_test_123\",\n  \"successUrl\": \"http://localhost:5173/success\",\n  \"cancelUrl\": \"http://localhost:5173/canceled\"\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/subscription/create-checkout-session",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "subscription", "create-checkout-session"]
+            },
+            "description": "Create a Stripe Checkout session for subscription.\n\n**Body (all optional, uses ENV defaults):**\n- `priceId`: Stripe Price ID (default: STRIPE_PRICE_ID)\n- `successUrl`: Redirect URL after success\n- `cancelUrl`: Redirect URL after cancel\n\n**Response:**\n- `url`: Stripe Checkout URL to redirect user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Subscription Status",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/subscription/status",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "subscription", "status"]
+            },
+            "description": "Get current user's subscription status.\n\n**Response:**\n- `subscription_status`: active | inactive | canceled\n- `subscription_plan`: Plan name\n- `stripe_customer_id`: Stripe customer ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Webhook (Stripe Signature Required)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Stripe-Signature",
+                "value": "t=1234567890,v1=signature_hash",
+                "description": "Real signature from Stripe"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"evt_test_123\",\n  \"object\": \"event\",\n  \"type\": \"checkout.session.completed\",\n  \"data\": {\n    \"object\": {\n      \"id\": \"cs_test_123\",\n      \"customer\": \"cus_test_123\",\n      \"metadata\": {\n        \"userId\": \"1\"\n      }\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/subscription/webhook",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "subscription", "webhook"]
+            },
+            "description": "Stripe webhook endpoint (called by Stripe, not manually).\n\n**Note:** This requires a valid Stripe signature. Use Stripe CLI for local testing:\n\n```bash\nstripe listen --forward-to localhost:3001/api/subscription/webhook\nstripe trigger checkout.session.completed\n```"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "WebRTC Signaling",
+      "item": [
+        {
+          "name": "Get Signaling Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/signaling/stats",
+              "host": ["{{BASE_URL}}"],
+              "path": ["api", "signaling", "stats"]
+            },
+            "description": "Get WebRTC signaling statistics.\n\n**Response:**\n- `activeRooms`: Number of active rooms\n- `totalConnections`: Total Socket.IO connections\n- `rooms`: Details about each room"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
+

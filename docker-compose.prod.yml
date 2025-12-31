@@ -1,0 +1,99 @@
+# ============================================
+# Aura Presence - Docker Compose (Production)
+# ============================================
+# Production setup with PostgreSQL
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: aura-postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-aura_presence}
+      - POSTGRES_USER=${POSTGRES_USER:-aura_admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - aura-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aura_admin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: aura-backend-prod
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-aura_admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aura_presence}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - STRIPE_PRICE_ID=${STRIPE_PRICE_ID}
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+      - LOG_LEVEL=warn
+      - DB_POOL_MIN=2
+      - DB_POOL_MAX=10
+    volumes:
+      - backend-logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - aura-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+      args:
+        - VITE_API_URL=${VITE_API_URL}
+        - VITE_TURN_USERNAME=${VITE_TURN_USERNAME}
+        - VITE_TURN_CREDENTIAL=${VITE_TURN_CREDENTIAL}
+    container_name: aura-frontend-prod
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - aura-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+networks:
+  aura-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  backend-logs:
+
