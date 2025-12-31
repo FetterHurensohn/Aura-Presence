@@ -49,34 +49,63 @@ function getConfig() {
   }
   
   // SQLite (Default für Dev/Tests)
+  // WICHTIG: Verwende IMMER absoluten Pfad mit join(__dirname, ...)
   let sqlitePath = join(__dirname, '../../data/aura-presence.db');
   
   // Override mit DATABASE_URL falls gesetzt
   if (DATABASE_URL && DATABASE_URL.startsWith('sqlite:')) {
     const customPath = DATABASE_URL.replace('sqlite:', '').trim();
-    if (customPath && customPath !== ':memory:') {
-      // Wenn customPath nicht absolut ist, mache ihn absolut
-      sqlitePath = customPath.startsWith('/') || customPath.includes(':') 
-        ? customPath 
-        : join(__dirname, '../../', customPath);
-    } else if (customPath === ':memory:') {
+    
+    if (customPath === ':memory:') {
+      // In-Memory-Datenbank
       sqlitePath = ':memory:';
+    } else if (customPath && customPath.length > 0) {
+      // Custom Pfad ist angegeben
+      // Wenn bereits absolut (enthält ':' für Windows oder startet mit '/' für Unix)
+      const isAbsolute = customPath.includes(':') || customPath.startsWith('/');
+      
+      if (isAbsolute) {
+        sqlitePath = customPath;
+      } else {
+        // Relativer Pfad -> mache absolut relativ zum Backend-Root
+        sqlitePath = join(__dirname, '../../', customPath);
+      }
     }
+    // Wenn customPath leer ist, behalte default sqlitePath
   }
+  
+  console.log('📊 SQLite-Datenbank-Pfad:', sqlitePath);
   
   // Stelle sicher, dass das Datenbank-Verzeichnis existiert
   if (sqlitePath !== ':memory:') {
     const dataDir = dirname(sqlitePath);
     
-    // Nur versuchen zu erstellen, wenn der Pfad gültig ist
-    if (dataDir && dataDir !== '.' && dataDir !== sqlitePath) {
+    // Robuster Check: Nur versuchen zu erstellen, wenn der Pfad gültig und absolut ist
+    const isValidPath = dataDir && 
+                        dataDir !== '.' && 
+                        dataDir !== '..' &&
+                        dataDir !== sqlitePath &&
+                        !dataDir.startsWith('\\\\.\\') && // Windows Device Path
+                        (dataDir.includes(':') || dataDir.startsWith('/')); // Absoluter Pfad (Windows oder Unix)
+    
+    if (isValidPath) {
       try {
         mkdirSync(dataDir, { recursive: true });
+        console.log(`✓ Datenbank-Verzeichnis erstellt/überprüft: ${dataDir}`);
       } catch (err) {
         if (err.code !== 'EEXIST') {
-          console.warn('Konnte Datenbank-Verzeichnis nicht erstellen:', err.message);
+          console.error('FEHLER beim Erstellen des Datenbank-Verzeichnisses:', {
+            dataDir,
+            sqlitePath,
+            error: err.message
+          });
         }
       }
+    } else {
+      console.warn('⚠️ Invalider Datenbank-Pfad erkannt, überspringe Verzeichnis-Erstellung:', {
+        dataDir,
+        sqlitePath
+      });
     }
   }
   
