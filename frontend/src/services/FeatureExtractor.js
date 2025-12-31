@@ -199,12 +199,12 @@ export class FaceMeshFeatureExtractor {
 
     // Berechne wie zentral die Iris ist (0 = perfekt zentriert)
     const leftEyeWidth = Math.abs(leftOuterCorner.x - leftInnerCorner.x);
-    const leftEyeCenter = (leftOuterCorner.x + leftInnerCorner.x) / 2;
-    const leftDeviation = Math.abs(leftIrisX - leftEyeCenter) / leftEyeWidth;
+    const leftEyeCenterX = (leftOuterCorner.x + leftInnerCorner.x) / 2;
+    const leftDeviation = Math.abs(leftIrisX - leftEyeCenterX) / leftEyeWidth;
 
     const rightEyeWidth = Math.abs(rightOuterCorner.x - rightInnerCorner.x);
-    const rightEyeCenter = (rightOuterCorner.x + rightInnerCorner.x) / 2;
-    const rightDeviation = Math.abs(rightIrisX - rightEyeCenter) / rightEyeWidth;
+    const rightEyeCenterX = (rightOuterCorner.x + rightInnerCorner.x) / 2;
+    const rightDeviation = Math.abs(rightIrisX - rightEyeCenterX) / rightEyeWidth;
 
     const avgDeviation = (leftDeviation + rightDeviation) / 2;
 
