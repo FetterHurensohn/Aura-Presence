@@ -6,11 +6,18 @@ import jwt from 'jsonwebtoken';
 import { findUserById } from '../models/User.js';
 import logger from '../utils/logger.js';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  logger.error('JWT_SECRET ist nicht in den Umgebungsvariablen gesetzt!');
-  process.exit(1);
+/**
+ * Get JWT_SECRET with validation
+ */
+function getJWTSecret() {
+  const JWT_SECRET = process.env.JWT_SECRET;
+  
+  if (!JWT_SECRET) {
+    logger.error('JWT_SECRET ist nicht in den Umgebungsvariablen gesetzt!');
+    throw new Error('JWT_SECRET ist nicht konfiguriert');
+  }
+  
+  return JWT_SECRET;
 }
 
 /**
@@ -47,7 +54,7 @@ export function authenticateToken(req, res, next) {
   }
   
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJWTSecret());
     
     // Benutzer aus Datenbank laden
     const user = findUserById(decoded.userId);
@@ -126,7 +133,7 @@ export function generateToken(userId) {
   
   return jwt.sign(
     { userId },
-    JWT_SECRET,
+    getJWTSecret(),
     { expiresIn }
   );
 }
