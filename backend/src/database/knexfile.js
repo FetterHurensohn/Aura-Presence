@@ -55,21 +55,26 @@ function getConfig() {
   if (DATABASE_URL && DATABASE_URL.startsWith('sqlite:')) {
     const customPath = DATABASE_URL.replace('sqlite:', '').trim();
     if (customPath && customPath !== ':memory:') {
-      sqlitePath = customPath;
+      // Wenn customPath nicht absolut ist, mache ihn absolut
+      sqlitePath = customPath.startsWith('/') || customPath.includes(':') 
+        ? customPath 
+        : join(__dirname, '../../', customPath);
     } else if (customPath === ':memory:') {
       sqlitePath = ':memory:';
     }
   }
   
-  // Stelle sicher, dass Custom-Path-Verzeichnis existiert
-  if (sqlitePath !== ':memory:' && DATABASE_URL && DATABASE_URL.startsWith('sqlite:')) {
+  // Stelle sicher, dass das Datenbank-Verzeichnis existiert
+  if (sqlitePath !== ':memory:') {
     const dataDir = dirname(sqlitePath);
-    if (dataDir && dataDir !== sqlitePath) {
+    
+    // Nur versuchen zu erstellen, wenn der Pfad gültig ist
+    if (dataDir && dataDir !== '.' && dataDir !== sqlitePath) {
       try {
         mkdirSync(dataDir, { recursive: true });
       } catch (err) {
         if (err.code !== 'EEXIST') {
-          console.warn('Konnte Custom-Verzeichnis nicht erstellen:', err.message);
+          console.warn('Konnte Datenbank-Verzeichnis nicht erstellen:', err.message);
         }
       }
     }

@@ -112,6 +112,10 @@ function AnalysisView({ user, onLogout }) {
       analysisIntervalRef.current = null;
     }
     
+    // TODO: Kamera stoppen bei Pause (wenn videoSource === 'camera')
+    // Dies wird durch VideoReceiver-Cleanup automatisch gehandhabt, wenn videoSource sich ändert
+    // Für explizites Stop: Man müsste VideoReceiver einen stopCamera() Prop übergeben
+    
     showInfo('Analyse pausiert.');
   };
 

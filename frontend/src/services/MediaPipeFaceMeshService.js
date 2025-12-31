@@ -11,6 +11,7 @@ class MediaPipeFaceMeshService {
   constructor() {
     this.faceMesh = null;
     this.isInitialized = false;
+    this.isFaceMeshReady = false; // WICHTIG: Erst true, wenn Assets geladen sind
     this.onResultsCallback = null;
     
     // Konfiguration
@@ -56,6 +57,11 @@ class MediaPipeFaceMeshService {
 
       // Ergebnis-Handler
       this.faceMesh.onResults((results) => {
+        // Markiere FaceMesh als bereit, wenn erste Results kommen (Assets geladen)
+        if (!this.isFaceMeshReady) {
+          this.isFaceMeshReady = true;
+          console.log('✓ MediaPipe Face Mesh bereit (Assets geladen)');
+        }
         if (this.onResultsCallback) {
           this.onResultsCallback(results);
         }
@@ -78,7 +84,10 @@ class MediaPipeFaceMeshService {
       throw new Error('MediaPipe Face Mesh nicht initialisiert');
     }
 
-    await this.faceMesh.send({ image: imageSource });
+    // Nur senden, wenn FaceMesh bereit ist (Assets geladen)
+    if (this.isFaceMeshReady) {
+      await this.faceMesh.send({ image: imageSource });
+    }
   }
 
   /**
@@ -91,16 +100,17 @@ class MediaPipeFaceMeshService {
     }
     
     this.isInitialized = false;
+    this.isFaceMeshReady = false; // Reset FaceMesh-Ready-Flag
     this.onResultsCallback = null;
     
     console.log('✓ MediaPipe Face Mesh geschlossen');
   }
 
   /**
-   * Prüfe ob initialisiert
+   * Prüfe ob initialisiert und bereit
    */
   isReady() {
-    return this.isInitialized && this.faceMesh !== null;
+    return this.isInitialized && this.faceMesh !== null && this.isFaceMeshReady;
   }
 }
 

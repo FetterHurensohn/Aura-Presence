@@ -11,6 +11,7 @@ class MediaPipeHandsService {
   constructor() {
     this.hands = null;
     this.isInitialized = false;
+    this.isHandsReady = false; // WICHTIG: Erst true, wenn Assets geladen sind
     this.onResultsCallback = null;
     
     // Konfiguration
@@ -56,6 +57,11 @@ class MediaPipeHandsService {
 
       // Ergebnis-Handler
       this.hands.onResults((results) => {
+        // Markiere Hands als bereit, wenn erste Results kommen (Assets geladen)
+        if (!this.isHandsReady) {
+          this.isHandsReady = true;
+          console.log('✓ MediaPipe Hands bereit (Assets geladen)');
+        }
         if (this.onResultsCallback) {
           this.onResultsCallback(results);
         }
@@ -78,7 +84,10 @@ class MediaPipeHandsService {
       throw new Error('MediaPipe Hands nicht initialisiert');
     }
 
-    await this.hands.send({ image: imageSource });
+    // Nur senden, wenn Hands bereit ist (Assets geladen)
+    if (this.isHandsReady) {
+      await this.hands.send({ image: imageSource });
+    }
   }
 
   /**
@@ -91,16 +100,17 @@ class MediaPipeHandsService {
     }
     
     this.isInitialized = false;
+    this.isHandsReady = false; // Reset Hands-Ready-Flag
     this.onResultsCallback = null;
     
     console.log('✓ MediaPipe Hands geschlossen');
   }
 
   /**
-   * Prüfe ob initialisiert
+   * Prüfe ob initialisiert und bereit
    */
   isReady() {
-    return this.isInitialized && this.hands !== null;
+    return this.isInitialized && this.hands !== null && this.isHandsReady;
   }
 }
 

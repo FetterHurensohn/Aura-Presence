@@ -120,7 +120,8 @@ function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
    */
   const handleMediaPipeUnifiedResults = (unifiedResults) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
 
     // Store latest results
     latestResultsRef.current = unifiedResults;
@@ -130,9 +131,15 @@ function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
     // Canvas leeren
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Video-Frame zeichnen (von Pose results)
-    if (unifiedResults.pose?.image) {
-      ctx.drawImage(unifiedResults.pose.image, 0, 0, canvas.width, canvas.height);
+    // WICHTIG: Zeichne Video-Frame DIREKT vom Video-Element
+    // Dadurch ist das Live-Video IMMER sichtbar, auch wenn MediaPipe noch lädt
+    if (video.readyState >= 2) {
+      ctx.save();
+      // Spiegle horizontal (für bessere UX bei Frontkamera)
+      ctx.scale(-1, 1);
+      ctx.translate(-canvas.width, 0);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
     }
 
     // 1. Pose-Landmarks zeichnen (falls erkannt)

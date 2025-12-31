@@ -179,9 +179,13 @@ class MediaPipeOrchestratorService {
           break;
       }
     } catch (error) {
-      // Unterdrücke Fehler während Pose lädt (normal beim Start)
-      if (!this.isPoseReady && currentModel === 'pose') {
-        // Still loading, ignore error
+      // Unterdrücke Fehler während Assets laden (normal beim Start)
+      const isLoadingPose = !this.isPoseReady && currentModel === 'pose';
+      const isLoadingFaceMesh = !faceMeshService.isFaceMeshReady && currentModel === 'faceMesh';
+      const isLoadingHands = !handsService.isHandsReady && currentModel === 'hands';
+      
+      if (isLoadingPose || isLoadingFaceMesh || isLoadingHands) {
+        // Still loading assets, ignore error
       } else {
         console.error(`Fehler beim Verarbeiten von ${currentModel}:`, error);
       }
