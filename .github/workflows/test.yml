@@ -26,13 +26,11 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
     
     - name: Install Backend Dependencies
       run: |
         cd backend
-        npm ci
+        npm install
     
     - name: Create Test .env
       run: |
@@ -87,7 +85,7 @@ jobs:
     - name: Install Dependencies
       run: |
         cd backend
-        npm ci
+        npm install
     
     - name: Run Migrations
       run: |
@@ -120,13 +118,11 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18.x'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
     
     - name: Install Frontend Dependencies
       run: |
         cd frontend
-        npm ci
+        npm install
     
     - name: Build Frontend
       run: |
@@ -155,7 +151,7 @@ jobs:
     - name: Install Dependencies
       run: |
         cd frontend
-        npm ci
+        npm install
     
     - name: Run ESLint
       run: |

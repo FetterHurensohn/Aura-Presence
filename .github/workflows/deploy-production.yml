@@ -83,34 +83,37 @@ jobs:
         # - name: Deploy
         #   run: vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
 
-  smoke-test:
-    name: Smoke Test Production
-    needs: [deploy-backend, deploy-frontend]
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Health Check Backend
-        run: |
-          echo "🏥 Running health check..."
-          curl -f https://api.aurapresence.com/health || exit 1
-      
-      - name: Health Check Frontend
-        run: |
-          echo "🏥 Checking frontend..."
-          curl -f https://app.aurapresence.com || exit 1
-      
-      - name: Notify Success
-        if: success()
-        run: |
-          echo "✅ Deployment successful!"
-          echo "Backend: https://api.aurapresence.com"
-          echo "Frontend: https://app.aurapresence.com"
-      
-      - name: Notify Failure
-        if: failure()
-        run: |
-          echo "❌ Deployment failed! Check logs."
-          exit 1
+  # smoke-test:
+  #   name: Smoke Test Production
+  #   needs: [deploy-backend, deploy-frontend]
+  #   runs-on: ubuntu-latest
+  #   
+  #   steps:
+  #     - name: Health Check Backend
+  #       run: |
+  #         echo "🏥 Running health check..."
+  #         curl -f https://api.aurapresence.com/health || exit 1
+  #     
+  #     - name: Health Check Frontend
+  #       run: |
+  #         echo "🏥 Checking frontend..."
+  #         curl -f https://app.aurapresence.com || exit 1
+  #     
+  #     - name: Notify Success
+  #       if: success()
+  #       run: |
+  #         echo "✅ Deployment successful!"
+  #         echo "Backend: https://api.aurapresence.com"
+  #         echo "Frontend: https://app.aurapresence.com"
+  #     
+  #     - name: Notify Failure
+  #       if: failure()
+  #       run: |
+  #         echo "❌ Deployment failed! Check logs."
+  #         exit 1
+  
+  # HINWEIS: Smoke-Tests sind deaktiviert, bis echte Deployment-URLs existieren.
+  # Aktivieren Sie diese, nachdem Railway/Vercel eingerichtet sind.
 
 # ============================================
 # SETUP INSTRUCTIONS
