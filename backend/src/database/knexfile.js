@@ -54,11 +54,16 @@ function getConfig() {
   // Stelle sicher, dass das data-Verzeichnis existiert (außer für :memory:)
   if (sqlitePath !== ':memory:') {
     const dataDir = dirname(sqlitePath);
-    try {
-      mkdirSync(dataDir, { recursive: true });
-    } catch (err) {
-      if (err.code !== 'EEXIST') {
-        console.error('Fehler beim Erstellen des data-Verzeichnisses:', err);
+    
+    // Nur versuchen zu erstellen wenn Pfad absolut oder gültig ist
+    if (dataDir && dataDir !== '.' && dataDir !== sqlitePath) {
+      try {
+        mkdirSync(dataDir, { recursive: true });
+      } catch (err) {
+        // Ignoriere Fehler - db.js wird das Verzeichnis auch erstellen
+        if (err.code !== 'EEXIST' && err.code !== 'ENOENT') {
+          console.error('Warnung beim Erstellen des data-Verzeichnisses:', err.message);
+        }
       }
     }
   }
