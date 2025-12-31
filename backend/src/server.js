@@ -13,7 +13,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Lade .env aus dem backend-Verzeichnis
-dotenv.config({ path: join(__dirname, '..', '.env') });
+const envPath = join(__dirname, '..', '.env');
+console.log('🔍 Loading .env from:', envPath);
+const result = dotenv.config({ path: envPath });
+if (result.error) {
+  console.error('❌ Error loading .env:', result.error);
+} else {
+  console.log('✅ .env loaded successfully');
+  console.log('🔑 JWT_SECRET present:', !!process.env.JWT_SECRET);
+  console.log('🔑 JWT_SECRET length:', process.env.JWT_SECRET?.length || 0);
+}
 
 import express from 'express';
 import { createServer } from 'http';
