@@ -60,7 +60,7 @@ function App() {
   return (
     <ErrorBoundary>
       <ConsentManager>
-        <Router>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <div className="app">
           <Toaster />
           <Routes>

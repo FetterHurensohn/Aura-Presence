@@ -3,15 +3,27 @@
  * 
  * WICHTIG: Alle MediaPipe-Lösungen verwenden Web-Version (WASM)
  * Alle Berechnungen erfolgen lokal im Browser!
+ * 
+ * HINWEIS: MediaPipe lädt über CDN-Scripts, nicht über npm-Imports
  */
 
-import * as poseModule from '@mediapipe/pose';
-import * as cameraModule from '@mediapipe/camera_utils';
-
-const { Pose } = poseModule;
-const { Camera } = cameraModule;
 import faceMeshService from './MediaPipeFaceMeshService.js';
 import handsService from './MediaPipeHandsService.js';
+
+// Warte bis MediaPipe Libraries geladen sind (von index.html)
+async function waitForMediaPipeLibraries() {
+  let attempts = 0;
+  while ((!window.Pose || !window.Camera) && attempts < 100) {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    attempts++;
+  }
+  
+  if (!window.Pose || !window.Camera) {
+    throw new Error('MediaPipe Libraries konnten nicht geladen werden. Bitte überprüfe deine Internetverbindung und lade die Seite neu.');
+  }
+  
+  console.log('✓ MediaPipe Libraries bereit');
+}
 
 class MediaPipeOrchestratorService {
   constructor() {
@@ -56,8 +68,11 @@ class MediaPipeOrchestratorService {
     this.onUnifiedResultsCallback = onUnifiedResults;
 
     try {
-      // 1. Pose-Model laden
-      this.pose = new Pose({
+      // 0. Warte bis MediaPipe Libraries geladen sind
+      await waitForMediaPipeLibraries();
+      
+      // 1. Pose-Model laden (aus window.Pose)
+      this.pose = new window.Pose({
         locateFile: (file) => {
           return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
         }
@@ -92,8 +107,8 @@ class MediaPipeOrchestratorService {
       }
 
       // Kamera initialisieren (falls videoElement eine echte Kamera ist)
-      if (videoElement && videoElement.srcObject) {
-        this.camera = new Camera(videoElement, {
+      if (videoElement && videoElement.srcObject && window.Camera) {
+        this.camera = new window.Camera(videoElement, {
           onFrame: async () => {
             if (this.pose && videoElement.readyState >= 2) {
               await this.pose.send({ image: videoElement });

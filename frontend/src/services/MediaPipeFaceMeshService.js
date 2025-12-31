@@ -1,13 +1,11 @@
 /**
  * MediaPipe Face Mesh Service - Gesichtserkennung mit 468 Landmarks
  * 
- * WICHTIG: Verwendet @mediapipe/face_mesh Web-Version (WASM)
+ * WICHTIG: Verwendet window.FaceMesh (geladen von index.html CDN)
  * Alle Berechnungen erfolgen lokal im Browser!
  */
 
-import * as faceMeshModule from '@mediapipe/face_mesh';
-
-const { FaceMesh } = faceMeshModule;
+// Keine Imports nötig - FaceMesh kommt von window.FaceMesh
 
 class MediaPipeFaceMeshService {
   constructor() {
@@ -36,8 +34,12 @@ class MediaPipeFaceMeshService {
     this.onResultsCallback = onResults;
 
     try {
-      // Face Mesh Model laden
-      this.faceMesh = new FaceMesh({
+      // Face Mesh Model laden (von window.FaceMesh)
+      if (!window.FaceMesh) {
+        throw new Error('window.FaceMesh nicht verfügbar. MediaPipe Scripts nicht geladen?');
+      }
+      
+      this.faceMesh = new window.FaceMesh({
         locateFile: (file) => {
           // CDN-URL für MediaPipe-Dateien
           return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;

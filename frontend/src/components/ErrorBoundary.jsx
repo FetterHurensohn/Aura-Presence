@@ -11,24 +11,25 @@ class ErrorBoundary extends React.Component {
     super(props);
     this.state = {
       hasError: false,
-      error: null,
-      errorInfo: null,
+      error: null
     };
+    this.errorInfo = null; // Store as instance variable
   }
 
   static getDerivedStateFromError(error) {
     // Update state damit nächster Render Fallback-UI zeigt
-    return { hasError: true };
+    return { 
+      hasError: true,
+      error: error
+    };
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log Error für Debugging
+    // Log Error für Debugging (KEIN setState hier - verhindert infinite loop!)
     console.error('ErrorBoundary caught error:', error, errorInfo);
-    
-    this.setState({
-      error,
-      errorInfo,
-    });
+
+    // Store errorInfo in instance variable (nicht im state)
+    this.errorInfo = errorInfo;
 
     // TODO: Sende Error an Sentry/Monitoring-Service
     // if (window.Sentry) {
@@ -72,12 +73,12 @@ class ErrorBoundary extends React.Component {
                 <summary>Fehlerdetails (nur in Development sichtbar)</summary>
                 <pre className="error-stack">
                   <strong>Error:</strong> {this.state.error.toString()}
-                  {this.state.errorInfo && (
+                  {this.errorInfo && (
                     <>
                       <br />
                       <br />
                       <strong>Component Stack:</strong>
-                      {this.state.errorInfo.componentStack}
+                      {this.errorInfo.componentStack}
                     </>
                   )}
                 </pre>

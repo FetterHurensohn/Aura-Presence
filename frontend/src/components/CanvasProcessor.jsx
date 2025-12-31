@@ -4,18 +4,12 @@
  */
 
 import React, { useRef, useEffect, useState } from 'react';
-import * as drawingUtils from '@mediapipe/drawing_utils';
-import * as poseModule from '@mediapipe/pose';
-import * as faceMeshModule from '@mediapipe/face_mesh';
-import * as handsModule from '@mediapipe/hands';
-
-const { drawConnectors, drawLandmarks } = drawingUtils;
-const { POSE_CONNECTIONS } = poseModule;
-const { FACEMESH_TESSELATION, FACEMESH_RIGHT_EYE, FACEMESH_LEFT_EYE, FACEMESH_LIPS } = faceMeshModule;
-const { HAND_CONNECTIONS } = handsModule;
 import mediaPipeService from '../services/MediaPipeService';
 import { UnifiedFeatureExtractor } from '../services/FeatureExtractor';
 import { showError, showWarning } from '../services/toastService';
+
+// MediaPipe Drawing Utils und Konstanten (von window)
+// Diese werden von den CDN-Scripts in index.html geladen
 
 function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
   const canvasRef = useRef(null);
@@ -142,13 +136,13 @@ function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
     }
 
     // 1. Pose-Landmarks zeichnen (falls erkannt)
-    if (unifiedResults.pose?.poseLandmarks) {
-      drawConnectors(ctx, unifiedResults.pose.poseLandmarks, POSE_CONNECTIONS, {
+    if (unifiedResults.pose?.poseLandmarks && window.drawConnectors && window.POSE_CONNECTIONS) {
+      window.drawConnectors(ctx, unifiedResults.pose.poseLandmarks, window.POSE_CONNECTIONS, {
         color: '#6c5ce7',
         lineWidth: 2
       });
 
-      drawLandmarks(ctx, unifiedResults.pose.poseLandmarks, {
+      window.drawLandmarks(ctx, unifiedResults.pose.poseLandmarks, {
         color: '#00d2d3',
         lineWidth: 1,
         radius: 3
@@ -156,57 +150,65 @@ function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
     }
 
     // 2. Face Mesh zeichnen (falls erkannt)
-    if (unifiedResults.faceMesh?.multiFaceLandmarks) {
+    if (unifiedResults.faceMesh?.multiFaceLandmarks && window.drawConnectors) {
       unifiedResults.faceMesh.multiFaceLandmarks.forEach(landmarks => {
         // Face Tesselation (dezent)
-        drawConnectors(ctx, landmarks, FACEMESH_TESSELATION, {
-          color: '#C0C0C070',
-          lineWidth: 1
-        });
+        if (window.FACEMESH_TESSELATION) {
+          window.drawConnectors(ctx, landmarks, window.FACEMESH_TESSELATION, {
+            color: '#C0C0C070',
+            lineWidth: 1
+          });
+        }
 
         // Eyes (hervorgehoben)
-        drawConnectors(ctx, landmarks, FACEMESH_RIGHT_EYE, {
-          color: '#FF3030',
-          lineWidth: 1
-        });
-        drawConnectors(ctx, landmarks, FACEMESH_LEFT_EYE, {
-          color: '#FF3030',
-          lineWidth: 1
-        });
+        if (window.FACEMESH_RIGHT_EYE) {
+          window.drawConnectors(ctx, landmarks, window.FACEMESH_RIGHT_EYE, {
+            color: '#FF3030',
+            lineWidth: 1
+          });
+        }
+        if (window.FACEMESH_LEFT_EYE) {
+          window.drawConnectors(ctx, landmarks, window.FACEMESH_LEFT_EYE, {
+            color: '#FF3030',
+            lineWidth: 1
+          });
+        }
 
         // Lips
-        drawConnectors(ctx, landmarks, FACEMESH_LIPS, {
-          color: '#E0E0E0',
-          lineWidth: 1
-        });
+        if (window.FACEMESH_LIPS) {
+          window.drawConnectors(ctx, landmarks, window.FACEMESH_LIPS, {
+            color: '#E0E0E0',
+            lineWidth: 1
+          });
+        }
 
         // Iris (wenn refined landmarks aktiv)
-        if (landmarks.length > 468) {
+        if (landmarks.length > 468 && window.drawLandmarks) {
           // Left iris: 468-472
           // Right iris: 473-477
           const leftIris = landmarks.slice(468, 473);
           const rightIris = landmarks.slice(473, 478);
           
-          drawLandmarks(ctx, leftIris, { color: '#30FF30', radius: 2 });
-          drawLandmarks(ctx, rightIris, { color: '#30FF30', radius: 2 });
+          window.drawLandmarks(ctx, leftIris, { color: '#30FF30', radius: 2 });
+          window.drawLandmarks(ctx, rightIris, { color: '#30FF30', radius: 2 });
         }
       });
     }
 
     // 3. Hands zeichnen (falls erkannt)
-    if (unifiedResults.hands?.multiHandLandmarks) {
+    if (unifiedResults.hands?.multiHandLandmarks && window.drawConnectors && window.HAND_CONNECTIONS) {
       unifiedResults.hands.multiHandLandmarks.forEach((handLandmarks, index) => {
         const handedness = unifiedResults.hands.multiHandedness?.[index]?.label || 'Unknown';
         const handColor = handedness === 'Left' ? '#FF6B6B' : '#4ECDC4';
 
         // Hand Connections
-        drawConnectors(ctx, handLandmarks, HAND_CONNECTIONS, {
+        window.drawConnectors(ctx, handLandmarks, window.HAND_CONNECTIONS, {
           color: handColor,
           lineWidth: 2
         });
 
         // Hand Landmarks
-        drawLandmarks(ctx, handLandmarks, {
+        window.drawLandmarks(ctx, handLandmarks, {
           color: handColor,
           lineWidth: 1,
           radius: 4

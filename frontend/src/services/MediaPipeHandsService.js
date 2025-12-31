@@ -1,13 +1,11 @@
 /**
  * MediaPipe Hands Service - Hand-Tracking mit 21 Landmarks pro Hand
  * 
- * WICHTIG: Verwendet @mediapipe/hands Web-Version (WASM)
+ * WICHTIG: Verwendet window.Hands (geladen von index.html CDN)
  * Alle Berechnungen erfolgen lokal im Browser!
  */
 
-import * as handsModule from '@mediapipe/hands';
-
-const { Hands } = handsModule;
+// Keine Imports nötig - Hands kommt von window.Hands
 
 class MediaPipeHandsService {
   constructor() {
@@ -36,8 +34,12 @@ class MediaPipeHandsService {
     this.onResultsCallback = onResults;
 
     try {
-      // Hands Model laden
-      this.hands = new Hands({
+      // Hands Model laden (von window.Hands)
+      if (!window.Hands) {
+        throw new Error('window.Hands nicht verfügbar. MediaPipe Scripts nicht geladen?');
+      }
+      
+      this.hands = new window.Hands({
         locateFile: (file) => {
           // CDN-URL für MediaPipe-Dateien
           return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
