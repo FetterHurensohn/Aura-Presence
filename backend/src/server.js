@@ -4,7 +4,10 @@
  * Auth, Analyse und Stripe-Integration
  */
 
+// WICHTIG: dotenv MUSS VOR allen anderen Imports geladen werden!
 import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -31,8 +34,6 @@ import sessionsRoutes from './routes/sessions.js';
 // Socket.IO Services & Middleware
 import signalingService from './services/signalingService.js';
 import socketAuthMiddleware from './middleware/socketAuth.js';
-
-dotenv.config();
 
 // Initialisiere Sentry DIREKT nach dotenv.config()
 initSentry();
