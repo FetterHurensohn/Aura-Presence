@@ -13,6 +13,7 @@
   align-items: flex-end;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 @keyframes fadeIn {
@@ -30,6 +31,8 @@
   animation: slideUp 0.3s ease-out;
   max-height: 90vh;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 @keyframes slideUp {

@@ -39,10 +39,19 @@ function getConfig() {
   }
   
   // SQLite (Default für Dev/Tests)
-  const sqlitePath = DATABASE_URL?.replace('sqlite:', '') || 
-                     join(__dirname, '../../data/aura-presence.db');
+  let sqlitePath = join(__dirname, '../../data/aura-presence.db');
   
-  // Stelle sicher, dass das data-Verzeichnis existiert
+  // Override mit DATABASE_URL falls gesetzt
+  if (DATABASE_URL && DATABASE_URL.startsWith('sqlite:')) {
+    const customPath = DATABASE_URL.replace('sqlite:', '').trim();
+    if (customPath && customPath !== ':memory:') {
+      sqlitePath = customPath;
+    } else if (customPath === ':memory:') {
+      sqlitePath = ':memory:';
+    }
+  }
+  
+  // Stelle sicher, dass das data-Verzeichnis existiert (außer für :memory:)
   if (sqlitePath !== ':memory:') {
     const dataDir = dirname(sqlitePath);
     try {
