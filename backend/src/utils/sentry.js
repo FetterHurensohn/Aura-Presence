@@ -111,6 +111,11 @@ export function initSentry() {
  * Express Error-Handler Middleware für Sentry
  */
 export function sentryErrorHandler() {
+  // Wenn Sentry nicht konfiguriert ist, gib No-Op Middleware zurück
+  if (!process.env.SENTRY_DSN) {
+    return (err, req, res, next) => next(err);
+  }
+  
   return Sentry.Handlers.errorHandler({
     shouldHandleError(error) {
       // Nur Server-Errors (5xx) zu Sentry senden
@@ -127,6 +132,11 @@ export function sentryErrorHandler() {
  * Express Request-Handler Middleware für Sentry
  */
 export function sentryRequestHandler() {
+  // Wenn Sentry nicht konfiguriert ist, gib No-Op Middleware zurück
+  if (!process.env.SENTRY_DSN) {
+    return (req, res, next) => next();
+  }
+  
   return Sentry.Handlers.requestHandler({
     // User-Context aus JWT setzen (falls vorhanden)
     user: ['id', 'email', 'subscription_plan'],
