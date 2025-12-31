@@ -52,26 +52,29 @@ function getConfig() {
   // WICHTIG: Verwende IMMER absoluten Pfad mit join(__dirname, ...)
   let sqlitePath = join(__dirname, '../../data/aura-presence.db');
   
-  // Override mit DATABASE_URL falls gesetzt
-  if (DATABASE_URL && DATABASE_URL.startsWith('sqlite:')) {
+  // Override mit DATABASE_URL falls explizit und korrekt gesetzt
+  if (DATABASE_URL && DATABASE_URL.trim().length > 0 && DATABASE_URL.startsWith('sqlite:')) {
     const customPath = DATABASE_URL.replace('sqlite:', '').trim();
     
     if (customPath === ':memory:') {
       // In-Memory-Datenbank
       sqlitePath = ':memory:';
     } else if (customPath && customPath.length > 0) {
-      // Custom Pfad ist angegeben
-      // Wenn bereits absolut (enthält ':' für Windows oder startet mit '/' für Unix)
-      const isAbsolute = customPath.includes(':') || customPath.startsWith('/');
+      // Entferne führende './' wenn vorhanden
+      const cleanPath = customPath.replace(/^\.\//, '');
+      
+      // Prüfe ob Pfad absolut ist
+      // Windows: Enthält ':' (z.B. C:\...)
+      // Unix: Startet mit '/' (z.B. /var/...)
+      const isAbsolute = cleanPath.includes(':') || cleanPath.startsWith('/');
       
       if (isAbsolute) {
-        sqlitePath = customPath;
+        sqlitePath = cleanPath;
       } else {
         // Relativer Pfad -> mache absolut relativ zum Backend-Root
-        sqlitePath = join(__dirname, '../../', customPath);
+        sqlitePath = join(__dirname, '../../', cleanPath);
       }
     }
-    // Wenn customPath leer ist, behalte default sqlitePath
   }
   
   console.log('📊 SQLite-Datenbank-Pfad:', sqlitePath);
