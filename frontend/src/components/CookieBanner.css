@@ -2,12 +2,17 @@
 
 .cookie-banner-overlay {
   position: fixed;
+  top: 0;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 9999;
   background: rgba(0, 0, 0, 0.5);
   animation: fadeIn 0.3s ease-in;
+  display: flex;
+  align-items: flex-end;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 @keyframes fadeIn {
@@ -20,8 +25,11 @@
   padding: 2rem;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   max-width: 800px;
-  margin: 0 auto;
+  width: 100%;
+  margin: auto auto 0 auto;
   animation: slideUp 0.3s ease-out;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 @keyframes slideUp {

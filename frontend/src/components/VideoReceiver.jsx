@@ -5,7 +5,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 
-function VideoReceiver({ children, videoSource = 'camera' }) {
+function VideoReceiver({ children, videoSource = 'camera', uploadedVideoUrl = null }) {
   const videoRef = useRef(null);
   const [stream, setStream] = useState(null);
   const [error, setError] = useState(null);
@@ -16,6 +16,8 @@ function VideoReceiver({ children, videoSource = 'camera' }) {
     // Initialisiere basierend auf videoSource
     if (videoSource === 'demo') {
       initializeDemoVideo();
+    } else if (videoSource === 'upload') {
+      initializeUploadedVideo();
     } else {
       requestCameraAccess();
     }
@@ -26,7 +28,7 @@ function VideoReceiver({ children, videoSource = 'camera' }) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [videoSource]);
+  }, [videoSource, uploadedVideoUrl]);
 
   /**
    * Kamera-Zugriff anfordern
@@ -65,6 +67,36 @@ function VideoReceiver({ children, videoSource = 'camera' }) {
       }
       
       setError(errorMessage);
+    }
+  };
+
+  /**
+   * Initialisiere hochgeladenes Video
+   */
+  const initializeUploadedVideo = () => {
+    try {
+      if (videoRef.current && uploadedVideoUrl) {
+        videoRef.current.src = uploadedVideoUrl;
+        videoRef.current.loop = false;
+        videoRef.current.muted = true;
+        videoRef.current.controls = true; // Show controls for uploaded videos
+        
+        setPermissionGranted(true);
+        setError(null);
+        
+        videoRef.current.onloadedmetadata = () => {
+          setVideoReady(true);
+        };
+        
+        videoRef.current.onerror = () => {
+          setError('Fehler beim Laden des Videos');
+        };
+      } else if (!uploadedVideoUrl) {
+        setError('Kein Video hochgeladen');
+      }
+    } catch (err) {
+      console.error('Fehler beim Initialisieren des hochgeladenen Videos:', err);
+      setError('Fehler beim Laden des Videos');
     }
   };
 

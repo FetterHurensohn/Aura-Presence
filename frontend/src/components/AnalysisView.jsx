@@ -17,10 +17,12 @@ function AnalysisView({ user, onLogout }) {
   const [currentFeatures, setCurrentFeatures] = useState(null);
   const [latestFeedback, setLatestFeedback] = useState(null);
   const [sessionId] = useState(() => `session_${Date.now()}`);
-  const [videoSource, setVideoSource] = useState('camera'); // 'camera' or 'demo'
+  const [videoSource, setVideoSource] = useState('camera'); // 'camera', 'demo', or 'upload'
+  const [uploadedVideo, setUploadedVideo] = useState(null);
   
   const analysisIntervalRef = useRef(null);
   const featuresBufferRef = useRef([]);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -32,19 +34,66 @@ function AnalysisView({ user, onLogout }) {
   }, []);
 
   /**
+   * Video-Upload Handler
+   */
+  const handleVideoUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('video/')) {
+      showError('Bitte wähle eine Video-Datei aus');
+      return;
+    }
+
+    // Validate file size (max 100MB)
+    const maxSize = 100 * 1024 * 1024; // 100MB
+    if (file.size > maxSize) {
+      showError('Video ist zu groß. Maximal 100MB erlaubt.');
+      return;
+    }
+
+    // Create object URL for video
+    const videoUrl = URL.createObjectURL(file);
+    setUploadedVideo(videoUrl);
+    setVideoSource('upload');
+    showInfo(`Video "${file.name}" hochgeladen. Bereit zur Analyse.`);
+  };
+
+  /**
+   * Cleanup uploaded video URL when component unmounts or video changes
+   */
+  useEffect(() => {
+    return () => {
+      if (uploadedVideo) {
+        URL.revokeObjectURL(uploadedVideo);
+      }
+    };
+  }, [uploadedVideo]);
+
+  /**
    * Analyse starten
    */
   const handleStartAnalysis = () => {
-    // Consent-Check: Kamera & AI
-    if (!hasConsent('camera')) {
+    // Consent-Check: Kamera & AI (nur für live camera, nicht für uploads)
+    if (videoSource === 'camera' && !hasConsent('camera')) {
       showWarning('Bitte erteile deine Einwilligung für Kamera-Zugriff in den Cookie-Einstellungen.');
+      return;
+    }
+
+    // Check if upload video is selected but no file uploaded
+    if (videoSource === 'upload' && !uploadedVideo) {
+      showWarning('Bitte lade zuerst ein Video hoch.');
       return;
     }
     
     setIsAnalyzing(true);
     featuresBufferRef.current = [];
     
-    showInfo('Analyse gestartet. Positioniere dich vor der Kamera.');
+    const sourceMessage = videoSource === 'camera' ? 'Positioniere dich vor der Kamera.' :
+                          videoSource === 'upload' ? 'Analysiere dein hochgeladenes Video.' :
+                          'Demo-Video wird analysiert.';
+    showInfo(`Analyse gestartet. ${sourceMessage}`);
 
     // Sende alle 2 Sekunden aggregierte Features an Backend
     analysisIntervalRef.current = setInterval(() => {
@@ -169,6 +218,24 @@ function AnalysisView({ user, onLogout }) {
               >
                 🎬 Demo
               </button>
+              <button 
+                onClick={() => {
+                  setVideoSource('upload');
+                  fileInputRef.current?.click();
+                }} 
+                className={`btn ${videoSource === 'upload' ? 'btn-primary' : 'btn-outline'}`}
+                disabled={isAnalyzing}
+                title="Video hochladen und analysieren"
+              >
+                📁 Upload
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="video/*"
+                onChange={handleVideoUpload}
+                style={{ display: 'none' }}
+              />
             </div>
 
             {/* Analysis Control */}
@@ -194,8 +261,16 @@ function AnalysisView({ user, onLogout }) {
         <div className="analysis-grid">
           {/* Video + Canvas */}
           <div className="video-section card">
-            <h3>Video-Feed ({videoSource === 'camera' ? 'Live-Kamera' : 'Demo-Video'})</h3>
-            <VideoReceiver videoSource={videoSource}>
+            <h3>
+              Video-Feed (
+                {videoSource === 'camera' ? 'Live-Kamera' : 
+                 videoSource === 'upload' ? 'Hochgeladenes Video' : 
+                 'Demo-Video'})
+            </h3>
+            <VideoReceiver 
+              videoSource={videoSource}
+              uploadedVideoUrl={uploadedVideo}
+            >
               {(videoRef) => (
                 <CanvasProcessor
                   videoRef={videoRef}

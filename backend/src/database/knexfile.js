@@ -6,6 +6,7 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { mkdirSync } from 'fs';
 
 dotenv.config();
 
@@ -40,6 +41,18 @@ function getConfig() {
   // SQLite (Default für Dev/Tests)
   const sqlitePath = DATABASE_URL?.replace('sqlite:', '') || 
                      join(__dirname, '../../data/aura-presence.db');
+  
+  // Stelle sicher, dass das data-Verzeichnis existiert
+  if (sqlitePath !== ':memory:') {
+    const dataDir = dirname(sqlitePath);
+    try {
+      mkdirSync(dataDir, { recursive: true });
+    } catch (err) {
+      if (err.code !== 'EEXIST') {
+        console.error('Fehler beim Erstellen des data-Verzeichnisses:', err);
+      }
+    }
+  }
   
   return {
     client: 'better-sqlite3',
