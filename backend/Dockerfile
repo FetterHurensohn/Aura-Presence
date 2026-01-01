@@ -2,6 +2,7 @@
 # Aura Presence Backend - Railway Dockerfile
 # ============================================
 # Simplified single-stage build for Railway
+# Build timestamp: 2026-01-01 Force rebuild to clear Railway cache
 
 FROM node:20-alpine
 
