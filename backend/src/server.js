@@ -33,11 +33,11 @@ import rateLimit from 'express-rate-limit';
 import { initializeDatabase } from './database/dbKnex.js';
 import logger from './utils/logger.js';
 
-// Sentry Error-Tracking
+// Sentry Error-Tracking (MUSS vor allen anderen Importen sein!)
 import { 
-  initSentry, 
-  sentryRequestHandler, 
-  sentryErrorHandler 
+  initSentry,
+  registerSentryErrorHandler,
+  captureException
 } from './utils/sentry.js';
 
 // Middleware
@@ -55,10 +55,10 @@ import avatarRoutes from './routes/avatar.js';
 import signalingService from './services/signalingService.js';
 import socketAuthMiddleware from './middleware/socketAuth.js';
 
-// Initialisiere Sentry DIREKT nach dotenv.config()
-initSentry();
-
+// Initialisiere Sentry DIREKT nach dotenv.config() und VOR Express App
 const app = express();
+initSentry(app); // ← Sentry Init mit Express App
+
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
@@ -71,8 +71,7 @@ const io = new Server(httpServer, {
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-// Sentry Request Handler MUSS vor allen anderen Middlewares stehen
-app.use(sentryRequestHandler());
+// WICHTIG: Sentry Request/Tracing Handler werden automatisch in initSentry() registriert
 
 app.use(helmet());
 app.use(cors({
@@ -133,11 +132,24 @@ app.get('/api/signaling/stats', (req, res) => {
   res.json(stats);
 });
 
-// Sentry Error Handler MUSS vor eigenem Error-Handler stehen
-app.use(sentryErrorHandler());
+// TEST ROUTE für Sentry (nur für Development/Testing)
+app.get('/test/sentry', (req, res) => {
+  throw new Error('TEST: Sentry Error Capture funktioniert!');
+});
 
-// Global Error Handler (mit standardisiertem Format)
+// Sentry Error Handler MUSS nach allen Routes registriert werden
+registerSentryErrorHandler(app);
+
+// Global Error Handler (mit standardisiertem Format + Sentry Capture)
 app.use((err, req, res, next) => {
+  // Capture Exception in Sentry (falls aktiviert)
+  captureException(err, {
+    path: req.path,
+    method: req.method,
+    query: req.query,
+    userId: req.user?.id
+  });
+
   logger.error('Unbehandelter Fehler:', {
     error: err.message,
     stack: err.stack,

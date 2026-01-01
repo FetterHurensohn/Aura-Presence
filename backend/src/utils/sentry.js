@@ -1,198 +1,227 @@
 /**
- * Sentry Error Tracking Integration
- * Konfiguriert Sentry für Backend Error-Monitoring
+ * Sentry Backend Integration
+ * 
+ * Wichtig: PII-Scrubbing für Video/Audio-Daten
+ * Sentry wird NICHT gestartet wenn SENTRY_ENABLED=false oder keine DSN gesetzt.
  */
 
 import * as Sentry from '@sentry/node';
+import * as Tracing from '@sentry/tracing';
+import logger from './logger.js';
 
 /**
- * Initialisiert Sentry mit Backend-Konfiguration
+ * Initialisiert Sentry für Backend (Express)
+ * MUSS ganz am Anfang in server.js aufgerufen werden!
+ * 
+ * @param {Express.Application} app - Express App Instanz
  */
-export function initSentry() {
-  const SENTRY_DSN = process.env.SENTRY_DSN;
-  const NODE_ENV = process.env.NODE_ENV || 'development';
+export function initSentry(app) {
+  // Check if Sentry should be enabled
+  const sentryEnabled = process.env.SENTRY_ENABLED !== 'false';
+  const sentryDsn = process.env.SENTRY_DSN_BACKEND;
 
-  // Nur in Production oder wenn explizit DSN gesetzt ist
-  if (!SENTRY_DSN) {
-    console.log('ℹ️  Sentry: Deaktiviert (keine DSN gesetzt)');
+  if (!sentryEnabled) {
+    logger.info('ℹ️  Sentry: Deaktiviert (SENTRY_ENABLED=false)');
     return;
   }
 
+  if (!sentryDsn) {
+    logger.warn('⚠️  Sentry: Keine DSN gesetzt - Sentry wird nicht initialisiert');
+    return;
+  }
+
+  // Initialize Sentry
   Sentry.init({
-    dsn: SENTRY_DSN,
-    environment: NODE_ENV,
+    dsn: sentryDsn,
+    environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
+    release: process.env.SENTRY_RELEASE || 'local',
     
-    // Release-Tracking (optional, kann via CI/CD gesetzt werden)
-    release: process.env.SENTRY_RELEASE || undefined,
-
-    // Sample-Rate für Performance-Monitoring
-    tracesSampleRate: NODE_ENV === 'production' ? 0.1 : 1.0,
-
-    // Integrations
+    // Tracing - default 5% sample rate
+    tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.05,
+    
+    // Express Integration
     integrations: [
-      // Automatische HTTP-Instrumentation
       new Sentry.Integrations.Http({ tracing: true }),
-      // Express-Integration (wird in server.js aktiviert)
-      // Note: Profiling wurde entfernt (optional und verursacht Import-Probleme)
+      new Tracing.Integrations.Express({ app }),
     ],
 
-    // Before-Send Hook: Filtere sensitive Daten
-    beforeSend(event, hint) {
-      // Entferne sensitive Headers
-      if (event.request) {
-        if (event.request.headers) {
-          delete event.request.headers['authorization'];
-          delete event.request.headers['cookie'];
-          delete event.request.headers['x-api-key'];
-        }
+    // Max breadcrumbs to avoid memory issues
+    maxBreadcrumbs: 50,
 
-        // Entferne Query-Parameter mit Secrets
-        if (event.request.query_string) {
-          event.request.query_string = event.request.query_string
-            .replace(/token=[^&]+/gi, 'token=[REDACTED]')
-            .replace(/api_key=[^&]+/gi, 'api_key=[REDACTED]');
-        }
+    // PII-Scrubbing: CRITICAL - Entferne Video/Audio-Daten!
+    beforeSend(event, hint) {
+      // Scrub request body für sensible Daten
+      if (event.request?.data) {
+        event.request.data = scrubPII(event.request.data);
       }
 
-      // Filtere Body-Daten (z.B. Passwörter)
-      if (event.request?.data) {
-        const data = typeof event.request.data === 'string'
-          ? JSON.parse(event.request.data)
-          : event.request.data;
+      // Scrub contexts
+      if (event.contexts?.data) {
+        event.contexts.data = scrubPII(event.contexts.data);
+      }
 
-        if (data.password) data.password = '[REDACTED]';
-        if (data.email) data.email = maskEmail(data.email);
-        if (data.token) data.token = '[REDACTED]';
-
-        event.request.data = data;
+      // Scrub extra data
+      if (event.extra) {
+        event.extra = scrubPII(event.extra);
       }
 
       return event;
     },
 
-    // Ignore bestimmte Errors
-    ignoreErrors: [
-      // Network Errors
-      'Network request failed',
-      'NetworkError',
-      'fetch failed',
-      
-      // Validation Errors (werden bereits geloggt)
-      'ValidationError',
-      
-      // Cancelled Requests
-      'AbortError',
-      'Request aborted',
-      
-      // Common Browser Errors (falls Backend auch Browser-Errors empfängt)
-      'ResizeObserver loop limit exceeded',
-      'Non-Error promise rejection captured',
-    ],
-
-    // Breadcrumbs für Debugging
+    // Filter breadcrumbs if needed
     beforeBreadcrumb(breadcrumb, hint) {
-      // Filtere sensitive Console-Logs
-      if (breadcrumb.category === 'console') {
-        if (breadcrumb.message?.includes('JWT')) return null;
-        if (breadcrumb.message?.includes('password')) return null;
+      // Optionally scrub breadcrumb data
+      if (breadcrumb.data) {
+        breadcrumb.data = scrubPII(breadcrumb.data);
       }
-
       return breadcrumb;
     },
   });
 
-  console.log('✅ Sentry initialisiert:', {
-    environment: NODE_ENV,
-    dsn: `${SENTRY_DSN.slice(0, 20)}...`,
-  });
-}
-
-/**
- * Express Error-Handler Middleware für Sentry
- */
-export function sentryErrorHandler() {
-  // Wenn Sentry nicht konfiguriert ist, gib No-Op Middleware zurück
-  if (!process.env.SENTRY_DSN) {
-    return (err, req, res, next) => next(err);
-  }
+  // Express Request Handler - MUSS VOR allen anderen Middleware/Routes sein
+  app.use(Sentry.Handlers.requestHandler());
   
-  return Sentry.Handlers.errorHandler({
-    shouldHandleError(error) {
-      // Nur Server-Errors (5xx) zu Sentry senden
-      // Client-Errors (4xx) werden nur geloggt
-      if (error.statusCode && error.statusCode < 500) {
-        return false;
-      }
-      return true;
-    },
-  });
+  // Express Tracing Handler - direkt nach requestHandler
+  app.use(Sentry.Handlers.tracingHandler());
+
+  logger.info(`✅ Sentry Backend initialisiert (Environment: ${process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV})`);
 }
 
 /**
- * Express Request-Handler Middleware für Sentry
+ * Sentry Error Handler - MUSS NACH allen Routes/Middleware registriert werden!
+ * In server.js als letztes Error-Handling Middleware einfügen.
+ * 
+ * @param {Express.Application} app - Express App Instanz
  */
-export function sentryRequestHandler() {
-  // Wenn Sentry nicht konfiguriert ist, gib No-Op Middleware zurück
-  if (!process.env.SENTRY_DSN) {
-    return (req, res, next) => next();
-  }
-  
-  return Sentry.Handlers.requestHandler({
-    // User-Context aus JWT setzen (falls vorhanden)
-    user: ['id', 'email', 'subscription_plan'],
-  });
-}
-
-/**
- * Manuelles Error-Capture mit Context
- */
-export function captureError(error, context = {}) {
-  Sentry.captureException(error, {
-    tags: context.tags,
-    extra: context.extra,
-    user: context.user,
-    level: context.level || 'error',
-  });
-}
-
-/**
- * Capture Message (für wichtige Events, keine Errors)
- */
-export function captureMessage(message, level = 'info', context = {}) {
-  Sentry.captureMessage(message, {
-    level,
-    tags: context.tags,
-    extra: context.extra,
-  });
-}
-
-/**
- * Set User-Context (nach Auth)
- */
-export function setUserContext(user) {
-  if (!user) {
-    Sentry.setUser(null);
+export function registerSentryErrorHandler(app) {
+  if (process.env.SENTRY_ENABLED === 'false' || !process.env.SENTRY_DSN_BACKEND) {
     return;
   }
 
-  Sentry.setUser({
-    id: user.id?.toString(),
-    email: maskEmail(user.email),
-    subscription_plan: user.subscription_plan,
-    subscription_status: user.subscription_status,
+  app.use(Sentry.Handlers.errorHandler());
+}
+
+/**
+ * Manuelles Capture von Exceptions mit Context
+ * 
+ * @param {Error} error - Fehler-Objekt
+ * @param {Object} context - Zusätzlicher Context (wird auch gescrubt)
+ */
+export function captureException(error, context = {}) {
+  if (process.env.SENTRY_ENABLED === 'false' || !process.env.SENTRY_DSN_BACKEND) {
+    return;
+  }
+
+  // Scrub context before sending
+  const scrubbedContext = scrubPII(context);
+
+  Sentry.captureException(error, {
+    extra: scrubbedContext,
   });
 }
 
 /**
- * Helper: E-Mail maskieren (Datenschutz)
+ * Manuelles Capture von Messages
+ * 
+ * @param {string} message - Message
+ * @param {string} level - Level (info, warning, error)
+ * @param {Object} context - Context data
  */
-function maskEmail(email) {
-  if (!email) return undefined;
-  const [local, domain] = email.split('@');
-  const maskedLocal = local.slice(0, 2) + '***';
-  return `${maskedLocal}@${domain}`;
+export function captureMessage(message, level = 'info', context = {}) {
+  if (process.env.SENTRY_ENABLED === 'false' || !process.env.SENTRY_DSN_BACKEND) {
+    return;
+  }
+
+  const scrubbedContext = scrubPII(context);
+
+  Sentry.captureMessage(message, {
+    level,
+    extra: scrubbedContext,
+  });
 }
 
-// Export Sentry für direkten Zugriff
-export { Sentry };
+/**
+ * PII-Scrubbing Funktion
+ * KRITISCH: Entfernt alle Video/Audio/Binary-Daten aus Events!
+ * 
+ * Entfernt/maskiert:
+ * - videoFrame, rawAudio, frameData, payload.frames, payload.image
+ * - base64 Strings (länger als 100 Zeichen)
+ * - mediaStream, frameBuffer
+ * - Große Objekte/Arrays (über 1MB serialized)
+ * 
+ * @param {any} data - Zu scrubbendes Datenobjekt
+ * @returns {any} Gescrubtes Objekt
+ */
+function scrubPII(data) {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
 
+  // Array handling
+  if (Array.isArray(data)) {
+    return data.map(item => scrubPII(item));
+  }
+
+  // Object handling
+  const scrubbed = {};
+  
+  for (const [key, value] of Object.entries(data)) {
+    const lowerKey = key.toLowerCase();
+
+    // KRITISCH: Entferne Video/Audio-bezogene Felder
+    if (
+      lowerKey.includes('video') ||
+      lowerKey.includes('audio') ||
+      lowerKey.includes('frame') ||
+      lowerKey.includes('image') ||
+      lowerKey.includes('stream') ||
+      lowerKey.includes('buffer') ||
+      lowerKey.includes('blob') ||
+      lowerKey.includes('media')
+    ) {
+      scrubbed[key] = '[SCRUBBED_MEDIA_DATA]';
+      continue;
+    }
+
+    // Entferne base64 Strings (erkennbar an Länge + Muster)
+    if (typeof value === 'string') {
+      if (value.length > 100 && /^[A-Za-z0-9+/=]+$/.test(value)) {
+        scrubbed[key] = '[SCRUBBED_BASE64]';
+        continue;
+      }
+      if (value.startsWith('data:image') || value.startsWith('data:video') || value.startsWith('data:audio')) {
+        scrubbed[key] = '[SCRUBBED_DATA_URI]';
+        continue;
+      }
+    }
+
+    // Rekursiv für nested objects
+    if (value && typeof value === 'object') {
+      // Check size to avoid huge objects
+      try {
+        const stringified = JSON.stringify(value);
+        if (stringified.length > 1000000) { // 1MB
+          scrubbed[key] = '[SCRUBBED_LARGE_OBJECT]';
+          continue;
+        }
+      } catch (e) {
+        scrubbed[key] = '[SCRUBBED_CIRCULAR_REF]';
+        continue;
+      }
+
+      scrubbed[key] = scrubPII(value);
+    } else {
+      scrubbed[key] = value;
+    }
+  }
+
+  return scrubbed;
+}
+
+export default {
+  initSentry,
+  registerSentryErrorHandler,
+  captureException,
+  captureMessage,
+};
