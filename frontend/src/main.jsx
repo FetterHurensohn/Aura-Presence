@@ -11,9 +11,13 @@ import './index.css';
 import { initSentry } from './services/sentryService';
 initSentry();
 
+// Toast Notification System
+import ToastConfig from './design-system/components/Toast';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />
+    <ToastConfig />
   </React.StrictMode>
 );
 

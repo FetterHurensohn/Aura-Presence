@@ -17,14 +17,18 @@ import crypto from 'crypto';
 export async function createRefreshToken(userId, token, expiresAt, meta = {}) {
   const db = getDatabase();
   
-  const [id] = await db('refresh_tokens').insert({
-    user_id: userId,
-    token,
-    expires_at: expiresAt,
-    created_at: Date.now(),
-    user_agent: meta.userAgent || null,
-    ip_address: meta.ipAddress || null
-  });
+  const [result] = await db('refresh_tokens')
+    .insert({
+      user_id: userId,
+      token,
+      expires_at: expiresAt,
+      created_at: Date.now(),
+      user_agent: meta.userAgent || null,
+      ip_address: meta.ipAddress || null
+    })
+    .returning('id'); // PostgreSQL requires .returning()
+  
+  const id = result.id || result; // Handle both SQLite (number) and PostgreSQL (object)
   
   return { id, userId, token, expiresAt };
 }

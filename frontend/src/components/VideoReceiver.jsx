@@ -3,14 +3,15 @@
  * Verwaltet MediaStream (Kamera, WebRTC oder Demo-Video)
  */
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef, useCallback } from 'react';
 
-function VideoReceiver({ children, videoSource = 'camera', uploadedVideoUrl = null }) {
+const VideoReceiver = forwardRef(({ children, videoSource = 'camera', uploadedVideoUrl = null }, ref) => {
   const videoRef = useRef(null);
   const [stream, setStream] = useState(null);
   const [error, setError] = useState(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     // Initialisiere basierend auf videoSource
@@ -150,6 +151,51 @@ function VideoReceiver({ children, videoSource = 'camera', uploadedVideoUrl = nu
     }
   };
 
+  /**
+   * Pause Video/Stream
+   */
+  const pause = useCallback(() => {
+    if (videoSource === 'camera' && stream) {
+      // Deaktiviere Tracks (aber stoppe sie nicht komplett)
+      stream.getTracks().forEach(track => {
+        track.enabled = false;
+      });
+      setIsPaused(true);
+    } else if (videoRef.current) {
+      // Pausiere Video-Element
+      videoRef.current.pause();
+      setIsPaused(true);
+    }
+  }, [videoSource, stream]);
+
+  /**
+   * Resume Video/Stream
+   */
+  const resume = useCallback(() => {
+    if (videoSource === 'camera' && stream) {
+      // Reaktiviere Tracks
+      stream.getTracks().forEach(track => {
+        track.enabled = true;
+      });
+      setIsPaused(false);
+    } else if (videoRef.current) {
+      // Setze Video fort
+      videoRef.current.play().catch(err => {
+        console.warn('Video play error:', err);
+      });
+      setIsPaused(false);
+    }
+  }, [videoSource, stream]);
+
+  /**
+   * Expose pause/resume methods via ref
+   */
+  useImperativeHandle(ref, () => ({
+    pause,
+    resume,
+    isPaused
+  }), [pause, resume, isPaused]);
+
   if (error) {
     return (
       <div className="video-error">
@@ -190,7 +236,7 @@ function VideoReceiver({ children, videoSource = 'camera', uploadedVideoUrl = nu
       {children && children(videoRef)}
     </div>
   );
-}
+});
 
 export default VideoReceiver;
 

@@ -4,11 +4,15 @@
 
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { checkAnalysisLimit } from '../middleware/usageLimits.js';
 import { validate, analysisSchema } from '../middleware/validation.js';
 import { evaluateBehavior } from '../services/evaluationService.js';
 import { generateInterpretation } from '../services/aiService.js';
 import { createSession, updateSession } from '../models/AnalysisSession.js';
+import { logUserActivity, logError } from '../utils/auditLogger.js';
 import logger from '../utils/logger.js';
+import { sendSuccess, sendError, asyncHandler } from '../utils/responseHelpers.js';
+import { ERROR_CODES } from '../schemas/apiSchemas.js';
 
 const router = express.Router();
 
@@ -29,84 +33,76 @@ const analyzeLimiter = rateLimit({
  */
 router.post('/', 
   authenticateToken, 
+  checkAnalysisLimit(), // Check usage limits for free users
   analyzeLimiter,
   validate(analysisSchema),
-  async (req, res) => {
-    try {
-      const { features, sessionId, metadata } = req.body;
-      const userId = req.user.id;
+  asyncHandler(async (req, res) => {
+    const { features, sessionId, metadata } = req.body;
+    const userId = req.user.id;
+    
+    logger.debug(`Analyse-Anfrage von User ${userId}:`, {
+      sessionId,
+      timestamp: features.frame_timestamp
+    });
+    
+    // Session-Tracking: Erstelle oder update Session
+    let dbSessionId = metadata?.dbSessionId;
+    if (!dbSessionId) {
+      const session = await createSession(userId, { clientSessionId: sessionId });
+      dbSessionId = session.id;
       
-      logger.debug(`Analyse-Anfrage von User ${userId}:`, {
-        sessionId,
-        timestamp: features.frame_timestamp
-      });
-      
-      // Session-Tracking: Erstelle oder update Session
-      let dbSessionId = metadata?.dbSessionId;
-      if (!dbSessionId) {
-        const session = await createSession(userId, { clientSessionId: sessionId });
-        dbSessionId = session.id;
-      }
-      
-      // Schritt 1: Regelbasierte Evaluation
-      const evaluation = evaluateBehavior(features);
-      
-      // Schritt 2: KI-Context aufbauen (NUR strukturierte Daten)
-      const aiContext = {
-        metrics: {
-          eyeContact: evaluation.metrics.eyeContact,
-          blinkRate: evaluation.metrics.blinkRate,
-          gestureFrequency: evaluation.metrics.gestureFrequency,
-          posture: evaluation.metrics.posture
-        },
-        flags: evaluation.flags,
-        confidence: evaluation.confidence,
-        timestamp: features.frame_timestamp
-      };
-      
-      // Schritt 3: KI-Interpretation generieren
-      // (OpenAI API wird NIEMALS Rohdaten erhalten, nur diese strukturierten Metriken)
-      const interpretation = await generateInterpretation(aiContext);
-      
-      // Schritt 4: Content-Filter anwenden (Sicherheit)
-      const filteredInterpretation = applyContentFilter(interpretation);
-      
-      // Schritt 5: Session updaten mit Frame-Daten
-      await updateSession(dbSessionId, {
-        confidence: evaluation.confidence
-      });
-      
-      // Response zusammenstellen
-      const response = {
-        success: true,
-        timestamp: Date.now(),
-        sessionId,
-        dbSessionId, // Für Frontend-Tracking
-        evaluation: {
-          metrics: evaluation.metrics,
-          flags: evaluation.flags,
-          confidence: evaluation.confidence
-        },
-        interpretation: filteredInterpretation,
-        metadata: {
-          processingTime: Date.now() - features.frame_timestamp,
-          userId
-        }
-      };
-      
-      logger.info(`Analyse abgeschlossen für User ${userId}, Confidence: ${evaluation.confidence}`);
-      
-      res.json(response);
-      
-    } catch (error) {
-      logger.error('Analyse-Fehler:', error);
-      res.status(500).json({
-        error: 'Fehler bei der Analyse',
-        message: 'Ein interner Fehler ist bei der Verarbeitung aufgetreten. Bitte versuche es erneut.',
-        code: 'ANALYSIS_ERROR'
-      });
+      // Log user activity (analysis started)
+      await logUserActivity(userId, 'analysis_start', { sessionId: dbSessionId }, req);
     }
-  }
+    
+    // Schritt 1: Regelbasierte Evaluation
+    const evaluation = evaluateBehavior(features);
+    
+    // Schritt 2: KI-Context aufbauen (NUR strukturierte Daten)
+    const aiContext = {
+      metrics: {
+        eyeContact: evaluation.metrics.eyeContact,
+        blinkRate: evaluation.metrics.blinkRate,
+        gestureFrequency: evaluation.metrics.gestureFrequency,
+        posture: evaluation.metrics.posture
+      },
+      flags: evaluation.flags,
+      confidence: evaluation.confidence,
+      timestamp: features.frame_timestamp
+    };
+    
+    // Schritt 3: KI-Interpretation generieren
+    // (OpenAI API wird NIEMALS Rohdaten erhalten, nur diese strukturierten Metriken)
+    const interpretation = await generateInterpretation(aiContext);
+    
+    // Schritt 4: Content-Filter anwenden (Sicherheit)
+    const filteredInterpretation = applyContentFilter(interpretation);
+    
+    // Schritt 5: Session updaten mit Frame-Daten
+    await updateSession(dbSessionId, {
+      confidence: evaluation.confidence
+    });
+    
+    logger.info(`Analyse abgeschlossen für User ${userId}, Confidence: ${evaluation.confidence}`);
+    
+    // Response zusammenstellen
+    return sendSuccess(res, {
+      success: true,
+      timestamp: Date.now(),
+      sessionId,
+      dbSessionId, // Für Frontend-Tracking
+      evaluation: {
+        metrics: evaluation.metrics,
+        flags: evaluation.flags,
+        confidence: evaluation.confidence
+      },
+      interpretation: filteredInterpretation,
+      metadata: {
+        processingTime: Date.now() - features.frame_timestamp,
+        userId
+      }
+    });
+  })
 );
 
 /**

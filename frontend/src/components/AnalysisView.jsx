@@ -7,6 +7,8 @@ import { Link } from 'react-router-dom';
 import VideoReceiver from './VideoReceiver';
 import CanvasProcessor from './CanvasProcessor';
 import FeedbackDisplay from './FeedbackDisplay';
+import FPSMonitor from './FPSMonitor';
+import SessionStats from './SessionStats';
 import { sendAnalysis } from '../services/apiService';
 import { showError, showInfo, showWarning } from '../services/toastService';
 import { hasConsent } from '../services/consentService';
@@ -17,8 +19,29 @@ function AnalysisView({ user, onLogout }) {
   const [currentFeatures, setCurrentFeatures] = useState(null);
   const [latestFeedback, setLatestFeedback] = useState(null);
   const [sessionId] = useState(() => `session_${Date.now()}`);
+  const [sessionStartTime] = useState(() => Date.now());
   const [videoSource, setVideoSource] = useState('camera'); // 'camera', 'demo', or 'upload'
   const [uploadedVideo, setUploadedVideo] = useState(null);
+  
+  // FPS & Detection Status
+  const [fps, setFps] = useState(0);
+  const [detectionStatus, setDetectionStatus] = useState({
+    pose: false,
+    face: false,
+    hands: false,
+    handsCount: 0,
+    confidence: 0
+  });
+  
+  // Analysis State: 'idle', 'sending', 'processing', 'success', 'error'
+  const [analysisState, setAnalysisState] = useState('idle');
+  const [lastError, setLastError] = useState(null);
+  
+  // Feedback History für Trend-Visualisierung
+  const feedbackHistoryRef = useRef([]);
+  
+  // VideoReceiver Ref für pause/resume
+  const videoReceiverRef = useRef(null);
   
   const analysisIntervalRef = useRef(null);
   const featuresBufferRef = useRef([]);
@@ -90,6 +113,11 @@ function AnalysisView({ user, onLogout }) {
     setIsAnalyzing(true);
     featuresBufferRef.current = [];
     
+    // Resume Video wenn pausiert
+    if (videoReceiverRef.current && videoReceiverRef.current.isPaused) {
+      videoReceiverRef.current.resume();
+    }
+    
     const sourceMessage = videoSource === 'camera' ? 'Positioniere dich vor der Kamera.' :
                           videoSource === 'upload' ? 'Analysiere dein hochgeladenes Video.' :
                           'Demo-Video wird analysiert.';
@@ -112,9 +140,10 @@ function AnalysisView({ user, onLogout }) {
       analysisIntervalRef.current = null;
     }
     
-    // TODO: Kamera stoppen bei Pause (wenn videoSource === 'camera')
-    // Dies wird durch VideoReceiver-Cleanup automatisch gehandhabt, wenn videoSource sich ändert
-    // Für explizites Stop: Man müsste VideoReceiver einen stopCamera() Prop übergeben
+    // Pausiere Kamera/Video
+    if (videoReceiverRef.current) {
+      videoReceiverRef.current.pause();
+    }
     
     showInfo('Analyse pausiert.');
   };
@@ -154,22 +183,60 @@ function AnalysisView({ user, onLogout }) {
     // Buffer leeren
     featuresBufferRef.current = [];
 
+    // State: Sending
+    setAnalysisState('sending');
+
     try {
+      // State: Processing
+      setAnalysisState('processing');
+      
       // Sende an Backend für Analyse
       const response = await sendAnalysis(aggregated, sessionId, {
         samplesCount: buffer.length
       });
 
+      // State: Success
+      setAnalysisState('success');
       setLatestFeedback(response);
+      setLastError(null);
+      
+      // Füge zur History hinzu (max 20 Einträge)
+      feedbackHistoryRef.current.push({
+        timestamp: Date.now(),
+        metrics: response.evaluation.metrics,
+        confidence: response.evaluation.confidence
+      });
+      if (feedbackHistoryRef.current.length > 20) {
+        feedbackHistoryRef.current.shift();
+      }
+      
+      // Nach 1 Sekunde zurück zu idle
+      setTimeout(() => {
+        if (isAnalyzing) {
+          setAnalysisState('idle');
+        }
+      }, 1000);
 
     } catch (err) {
       console.error('Fehler beim Senden der Analyse:', err);
+      
+      // State: Error
+      setAnalysisState('error');
+      setLastError(err);
+      
       // Error-Toast wird automatisch von apiService angezeigt
       // Bei wiederholten Fehlern: Analyse stoppen
       if (err.response?.status >= 500) {
         handleStopAnalysis();
         showError('Analyse aufgrund von Server-Fehlern pausiert.');
       }
+      
+      // Nach 3 Sekunden zurück zu idle (wenn noch am Analysieren)
+      setTimeout(() => {
+        if (isAnalyzing) {
+          setAnalysisState('idle');
+        }
+      }, 3000);
     }
   };
 
@@ -204,6 +271,14 @@ function AnalysisView({ user, onLogout }) {
         <div className="analysis-header">
           <h1>Live-Analyse</h1>
           <div className="analysis-controls">
+            {/* Analysis State Indicator */}
+            {isAnalyzing && (
+              <AnalysisStateIndicator 
+                state={analysisState} 
+                error={lastError}
+              />
+            )}
+            
             {/* Video Source Toggle */}
             <div className="video-source-toggle" style={{ marginRight: '1rem' }}>
               <button 
@@ -272,15 +347,57 @@ function AnalysisView({ user, onLogout }) {
                  'Demo-Video'})
             </h3>
             <VideoReceiver 
+              ref={videoReceiverRef}
               videoSource={videoSource}
               uploadedVideoUrl={uploadedVideo}
             >
               {(videoRef) => (
-                <CanvasProcessor
-                  videoRef={videoRef}
-                  isAnalyzing={isAnalyzing}
-                  onFeaturesExtracted={handleFeaturesExtracted}
-                />
+                <>
+                  <CanvasProcessor
+                    videoRef={videoRef}
+                    isAnalyzing={isAnalyzing}
+                    onFeaturesExtracted={handleFeaturesExtracted}
+                    onFpsUpdate={setFps}
+                    onDetectionStatus={setDetectionStatus}
+                  />
+                  
+                  {/* FPS Monitor Overlay */}
+                  <div style={{ 
+                    position: 'absolute', 
+                    top: '10px', 
+                    right: '10px', 
+                    zIndex: 10 
+                  }}>
+                    <FPSMonitor fps={fps} showWarning={true} />
+                  </div>
+
+                  {/* Detection Status Badges */}
+                  <div style={{ 
+                    position: 'absolute', 
+                    top: '10px', 
+                    left: '10px', 
+                    zIndex: 10,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.5rem'
+                  }}>
+                    <DetectionBadge 
+                      label="Pose" 
+                      detected={detectionStatus.pose} 
+                      color="#6c5ce7" 
+                    />
+                    <DetectionBadge 
+                      label="Gesicht" 
+                      detected={detectionStatus.face} 
+                      color="#FF3030" 
+                    />
+                    <DetectionBadge 
+                      label={detectionStatus.handsCount === 0 ? 'Hände' : `${detectionStatus.handsCount} Hand${detectionStatus.handsCount > 1 ? 'e' : ''}`}
+                      detected={detectionStatus.hands} 
+                      color="#4ECDC4" 
+                    />
+                  </div>
+                </>
               )}
             </VideoReceiver>
 
@@ -360,7 +477,17 @@ function AnalysisView({ user, onLogout }) {
             <FeedbackDisplay 
               feedback={latestFeedback} 
               isAnalyzing={isAnalyzing}
+              feedbackHistory={feedbackHistoryRef.current}
             />
+            
+            {/* Session Statistics */}
+            <div style={{ marginTop: '1.5rem' }}>
+              <SessionStats 
+                feedbackHistory={feedbackHistoryRef.current}
+                sessionStartTime={sessionStartTime}
+                isAnalyzing={isAnalyzing}
+              />
+            </div>
           </div>
         </div>
 
@@ -374,6 +501,105 @@ function AnalysisView({ user, onLogout }) {
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Detection Badge Component
+ * Zeigt an ob eine bestimmte Landmark-Gruppe erkannt wurde
+ */
+function DetectionBadge({ label, detected, color }) {
+  return (
+    <div style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      padding: '0.5rem 0.75rem',
+      background: detected ? 'rgba(0, 0, 0, 0.7)' : 'rgba(0, 0, 0, 0.5)',
+      borderRadius: '8px',
+      backdropFilter: 'blur(10px)',
+      fontSize: '0.875rem',
+      color: detected ? color : '#888',
+      fontWeight: detected ? '600' : '400',
+      transition: 'all 0.3s ease',
+      minWidth: '120px'
+    }}>
+      <span style={{ fontSize: '1rem' }}>
+        {detected ? '✓' : '⚠'}
+      </span>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+/**
+ * Analysis State Indicator Component
+ * Zeigt den aktuellen Status der Backend-Analyse
+ */
+function AnalysisStateIndicator({ state, error }) {
+  const getStateConfig = () => {
+    switch (state) {
+      case 'sending':
+        return {
+          icon: '📤',
+          text: 'Sende...',
+          color: '#FFD93D',
+          bg: 'rgba(255, 217, 61, 0.2)'
+        };
+      case 'processing':
+        return {
+          icon: '🔄',
+          text: 'Analysiere...',
+          color: '#8A63FF',
+          bg: 'rgba(138, 99, 255, 0.2)',
+          pulse: true
+        };
+      case 'success':
+        return {
+          icon: '✓',
+          text: 'Erfolg',
+          color: '#44FF9E',
+          bg: 'rgba(68, 255, 158, 0.2)'
+        };
+      case 'error':
+        return {
+          icon: '⚠️',
+          text: 'Fehler',
+          color: '#FF5757',
+          bg: 'rgba(255, 87, 87, 0.2)'
+        };
+      default: // idle
+        return {
+          icon: '⏸',
+          text: 'Bereit',
+          color: '#6B6B78',
+          bg: 'rgba(107, 107, 120, 0.2)'
+        };
+    }
+  };
+
+  const config = getStateConfig();
+
+  return (
+    <div style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      padding: '0.5rem 1rem',
+      background: config.bg,
+      border: `1px solid ${config.color}40`,
+      borderRadius: '999px',
+      color: config.color,
+      fontSize: '0.875rem',
+      fontWeight: '600',
+      animation: config.pulse ? 'pulse 2s ease-in-out infinite' : 'none',
+      transition: 'all 0.3s ease'
+    }}>
+      <span style={{ fontSize: '1rem' }}>
+        {config.icon}
+      </span>
+      <span>{config.text}</span>
     </div>
   );
 }

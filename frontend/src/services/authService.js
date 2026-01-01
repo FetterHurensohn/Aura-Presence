@@ -13,10 +13,13 @@ export async function register(email, password) {
     password
   });
   
-  const { token, user } = response.data;
+  const { token, refreshToken, user } = response.data;
   
   // Token speichern
   localStorage.setItem('token', token);
+  if (refreshToken) {
+    localStorage.setItem('refreshToken', refreshToken);
+  }
   
   return user;
 }
@@ -30,10 +33,13 @@ export async function login(email, password) {
     password
   });
   
-  const { token, user } = response.data;
+  const { token, refreshToken, user } = response.data;
   
   // Token speichern
   localStorage.setItem('token', token);
+  if (refreshToken) {
+    localStorage.setItem('refreshToken', refreshToken);
+  }
   
   return user;
 }
@@ -43,12 +49,19 @@ export async function login(email, password) {
  */
 export function logout() {
   localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
 }
 
 /**
  * Aktuellen Benutzer abrufen
  */
 export async function getCurrentUser() {
+  // Prüfe zuerst ob Token existiert
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('No token found');
+  }
+  
   const response = await apiClient.get('/auth/me');
   return response.data.user;
 }

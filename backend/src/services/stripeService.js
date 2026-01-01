@@ -4,6 +4,7 @@
 
 import Stripe from 'stripe';
 import { findUserById, updateStripeCustomerId, updateSubscription } from '../models/User.js';
+import { getDatabase } from '../database/dbKnex.js';
 import logger from '../utils/logger.js';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
@@ -26,7 +27,7 @@ export async function createCheckoutSession({ userId, userEmail, priceId, succes
   }
   
   try {
-    const user = findUserById(userId);
+    const user = await findUserById(userId); // Fixed: added await
     
     if (!user) {
       throw new Error('Benutzer nicht gefunden');
@@ -137,6 +138,10 @@ export async function handleWebhookEvent(event) {
 async function handleCheckoutCompleted(session) {
   const userId = parseInt(session.client_reference_id || session.metadata?.userId);
   
+  // #region agent log - Hypothesis C: async/await
+  fetch('http://127.0.0.1:7243/ingest/b9390f91-59df-4f45-bae6-4a81acbfe8e3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stripeService.js:140',message:'handleCheckoutCompleted entry',data:{userId,hasCustomerId:!!session.customer,hasSubscription:!!session.subscription},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
+  
   if (!userId) {
     logger.warn('Keine User ID in Checkout Session gefunden');
     return;
@@ -146,7 +151,7 @@ async function handleCheckoutCompleted(session) {
   
   // Speichere Stripe Customer ID
   if (customerId) {
-    updateStripeCustomerId(userId, customerId);
+    await updateStripeCustomerId(userId, customerId);
     logger.info(`Stripe Customer ID gespeichert für User ${userId}: ${customerId}`);
   }
   
@@ -163,10 +168,13 @@ async function handleCheckoutCompleted(session) {
 async function handleSubscriptionUpdate(subscription) {
   const customerId = subscription.customer;
   
-  // Finde User über Customer ID
-  const db = (await import('../database/db.js')).default();
-  const stmt = db.prepare('SELECT * FROM users WHERE stripe_customer_id = ?');
-  const user = stmt.get(customerId);
+  // #region agent log - Hypothesis E: getDatabase import
+  fetch('http://127.0.0.1:7243/ingest/b9390f91-59df-4f45-bae6-4a81acbfe8e3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'stripeService.js:170',message:'handleSubscriptionUpdate db access',data:{customerId,hasGetDatabase:typeof getDatabase},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+  // #endregion
+  
+  // Finde User über Customer ID (Knex + PostgreSQL)
+  const db = getDatabase();
+  const user = await db('users').where('stripe_customer_id', customerId).first();
   
   if (!user) {
     logger.warn(`Kein User gefunden für Customer ${customerId}`);
@@ -177,9 +185,29 @@ async function handleSubscriptionUpdate(subscription) {
   const plan = subscription.items.data[0]?.price?.id || 'unknown';
   const periodEnd = subscription.current_period_end * 1000; // Unix timestamp -> JS timestamp
   
-  updateSubscription(user.id, status, plan, periodEnd);
+  // ROLE-MAPPING basierend auf Stripe Price ID und subscription status
+  let role = 'free';
+  if (status === 'active' || status === 'trialing') {
+    // Prüfe Price ID gegen ENV-Variablen
+    if (plan === process.env.STRIPE_ENTERPRISE_PRICE_ID || plan.includes('enterprise')) {
+      role = 'enterprise';
+    } else if (plan === process.env.STRIPE_PRO_PRICE_ID || plan.includes('pro')) {
+      role = 'pro';
+    }
+  }
   
-  logger.info(`Subscription aktualisiert für User ${user.id}: ${status}`);
+  // Update Subscription & Role
+  await db('users')
+    .where('id', user.id)
+    .update({
+      subscription_status: status,
+      subscription_plan: plan,
+      subscription_current_period_end: periodEnd,
+      role: role,
+      updated_at: Date.now()
+    });
+  
+  logger.info(`Subscription & role updated for user ${user.id}: ${status}, ${role}`);
 }
 
 /**
@@ -188,18 +216,26 @@ async function handleSubscriptionUpdate(subscription) {
 async function handleSubscriptionDeleted(subscription) {
   const customerId = subscription.customer;
   
-  const db = (await import('../database/db.js')).default();
-  const stmt = db.prepare('SELECT * FROM users WHERE stripe_customer_id = ?');
-  const user = stmt.get(customerId);
+  const db = getDatabase();
+  const user = await db('users').where('stripe_customer_id', customerId).first();
   
   if (!user) {
     logger.warn(`Kein User gefunden für Customer ${customerId}`);
     return;
   }
   
-  updateSubscription(user.id, 'canceled', null, null);
+  // Subscription gelöscht -> zurück zu free
+  await db('users')
+    .where('id', user.id)
+    .update({
+      subscription_status: 'canceled',
+      subscription_plan: null,
+      subscription_current_period_end: null,
+      role: 'free',
+      updated_at: Date.now()
+    });
   
-  logger.info(`Subscription gelöscht für User ${user.id}`);
+  logger.info(`Subscription deleted, role set to free for user ${user.id}`);
 }
 
 /**
@@ -221,14 +257,18 @@ async function handlePaymentFailed(invoice) {
   
   logger.warn(`Zahlung fehlgeschlagen für Customer ${customerId}`);
   
-  // Finde User
-  const db = (await import('../database/db.js')).default();
-  const stmt = db.prepare('SELECT * FROM users WHERE stripe_customer_id = ?');
-  const user = stmt.get(customerId);
+  // Finde User (Knex + PostgreSQL)
+  const db = getDatabase();
+  const user = await db('users').where('stripe_customer_id', customerId).first();
   
   if (user) {
-    // Setze Subscription-Status auf 'past_due' wenn Zahlung fehlschlägt
-    updateSubscription(user.id, 'past_due', user.subscription_plan, user.subscription_current_period_end);
+    // Setze Subscription-Status auf 'past_due' wenn Zahlung fehlschlägt (behalte role)
+    await db('users')
+      .where('id', user.id)
+      .update({
+        subscription_status: 'past_due',
+        updated_at: Date.now()
+      });
     logger.info(`Subscription-Status auf 'past_due' gesetzt für User ${user.id}`);
   }
   
@@ -244,23 +284,21 @@ async function handleCustomerDeleted(customer) {
   
   logger.info(`Customer gelöscht: ${customerId}`);
   
-  // Finde User
-  const db = (await import('../database/db.js')).default();
-  const stmt = db.prepare('SELECT * FROM users WHERE stripe_customer_id = ?');
-  const user = stmt.get(customerId);
+  // Finde User (Knex + PostgreSQL)
+  const db = getDatabase();
+  const user = await db('users').where('stripe_customer_id', customerId).first();
   
   if (user) {
     // Entferne Stripe-Daten vom User
-    const updateStmt = db.prepare(`
-      UPDATE users 
-      SET stripe_customer_id = NULL,
-          subscription_status = 'canceled',
-          subscription_plan = NULL,
-          subscription_current_period_end = NULL,
-          updated_at = ?
-      WHERE id = ?
-    `);
-    updateStmt.run(Date.now(), user.id);
+    await db('users')
+      .where('id', user.id)
+      .update({
+        stripe_customer_id: null,
+        subscription_status: 'canceled',
+        subscription_plan: null,
+        subscription_current_period_end: null,
+        updated_at: Date.now()
+      });
     
     logger.info(`Stripe-Daten entfernt für User ${user.id} nach Customer-Löschung`);
   }

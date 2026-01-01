@@ -6,7 +6,7 @@
 import React from 'react';
 import './FeedbackDisplay.css';
 
-function FeedbackDisplay({ feedback, isAnalyzing }) {
+function FeedbackDisplay({ feedback, isAnalyzing, feedbackHistory = [] }) {
   if (!feedback) {
     return (
       <div className="card feedback-placeholder">
@@ -62,18 +62,22 @@ function FeedbackDisplay({ feedback, isAnalyzing }) {
           <MetricItem 
             label="Augenkontakt"
             metric={evaluation.metrics.eyeContact}
+            feedbackHistory={feedbackHistory}
           />
           <MetricItem 
             label="Blinzelrate"
             metric={evaluation.metrics.blinkRate}
+            feedbackHistory={feedbackHistory}
           />
           <MetricItem 
             label="Gestik"
             metric={evaluation.metrics.gestureFrequency}
+            feedbackHistory={feedbackHistory}
           />
           <MetricItem 
             label="Körperhaltung"
             metric={evaluation.metrics.posture}
+            feedbackHistory={feedbackHistory}
           />
         </div>
       </div>
@@ -100,9 +104,26 @@ function FeedbackDisplay({ feedback, isAnalyzing }) {
 }
 
 /**
- * Einzelne Metrik-Anzeige
+ * Einzelne Metrik-Anzeige mit Trend-Graph
  */
-function MetricItem({ label, metric }) {
+function MetricItem({ label, metric, feedbackHistory = [] }) {
+  // Extrahiere Trend-Daten für diese Metrik (letzten 5 Werte)
+  const metricKey = label.toLowerCase().replace(/ä/g, 'a').replace(/ö/g, 'o').replace(/ü/g, 'u');
+  const trendData = feedbackHistory.slice(-5).map(entry => {
+    // Map label to metric key
+    let metricValue = 0.5;
+    if (metricKey.includes('augenkontakt')) {
+      metricValue = entry.metrics?.eyeContact?.score || 0.5;
+    } else if (metricKey.includes('blinzel')) {
+      metricValue = entry.metrics?.blinkRate?.score || 0.5;
+    } else if (metricKey.includes('gestik')) {
+      metricValue = entry.metrics?.gestureFrequency?.score || 0.5;
+    } else if (metricKey.includes('haltung')) {
+      metricValue = entry.metrics?.posture?.score || 0.5;
+    }
+    return metricValue;
+  });
+
   return (
     <div className="metric-item">
       <div className="metric-header">
@@ -117,6 +138,23 @@ function MetricItem({ label, metric }) {
           style={{ width: `${metric.score * 100}%` }}
         />
       </div>
+      
+      {/* Mini Trend Graph */}
+      {trendData.length > 1 && (
+        <div className="metric-trend">
+          {trendData.map((value, i) => (
+            <div 
+              key={i} 
+              className="trend-bar" 
+              style={{ 
+                height: `${value * 100}%`,
+                opacity: 0.5 + (i / trendData.length) * 0.5 // Neuere Bars sind opaker
+              }} 
+            />
+          ))}
+        </div>
+      )}
+      
       <p className="metric-description">{metric.description}</p>
     </div>
   );

@@ -4,6 +4,7 @@
  */
 
 import { findUserById } from '../models/User.js';
+import { getDatabase } from '../database/dbKnex.js';
 import logger from '../utils/logger.js';
 
 const GDPR_DELETION_DELAY_DAYS = parseInt(process.env.GDPR_DELETION_DELAY_DAYS || '30');
@@ -13,30 +14,26 @@ const GDPR_DELETION_DELAY_DAYS = parseInt(process.env.GDPR_DELETION_DELAY_DAYS |
  */
 export async function exportUserData(userId) {
   try {
-    const user = findUserById(userId);
+    const user = await findUserById(userId);
     
     if (!user) {
       throw new Error('User nicht gefunden');
     }
     
-    // Lade verknüpfte Daten
-    const db = (await import('../database/db.js')).default();
+    // Lade verknüpfte Daten (Knex + PostgreSQL)
+    const db = getDatabase();
     
     // Analysis Sessions
-    const sessions = db.prepare(`
-      SELECT id, started_at, ended_at, total_frames, average_confidence, metadata
-      FROM analysis_sessions
-      WHERE user_id = ?
-      ORDER BY started_at DESC
-    `).all(userId);
+    const sessions = await db('analysis_sessions')
+      .select('id', 'started_at', 'ended_at', 'total_frames', 'average_confidence', 'metadata')
+      .where('user_id', userId)
+      .orderBy('started_at', 'desc');
     
     // Webhook Events (nur User-relevante)
-    const webhookEvents = db.prepare(`
-      SELECT event_id, event_type, processed_at
-      FROM webhook_events
-      WHERE user_id = ?
-      ORDER BY processed_at DESC
-    `).all(userId);
+    const webhookEvents = await db('webhook_events')
+      .select('event_id', 'event_type', 'processed_at')
+      .where('user_id', userId)
+      .orderBy('processed_at', 'desc');
     
     // Zusammenstellen (OHNE sensible Daten)
     const exportData = {
@@ -90,7 +87,7 @@ export async function exportUserData(userId) {
  */
 export async function scheduleAccountDeletion(userId) {
   try {
-    const user = findUserById(userId);
+    const user = await findUserById(userId);
     
     if (!user) {
       throw new Error('User nicht gefunden');
@@ -109,16 +106,14 @@ export async function scheduleAccountDeletion(userId) {
     // Berechne Löschungsdatum (jetzt + Grace-Period)
     const deletionDate = Date.now() + (GDPR_DELETION_DELAY_DAYS * 24 * 60 * 60 * 1000);
     
-    // Speichere in DB
-    const db = (await import('../database/db.js')).default();
-    const stmt = db.prepare(`
-      UPDATE users 
-      SET deletion_scheduled_at = ?,
-          updated_at = ?
-      WHERE id = ?
-    `);
-    
-    stmt.run(deletionDate, Date.now(), userId);
+    // Speichere in DB (Knex + PostgreSQL)
+    const db = getDatabase();
+    await db('users')
+      .where('id', userId)
+      .update({
+        deletion_scheduled_at: deletionDate,
+        updated_at: Date.now()
+      });
     
     logger.info(`Account deletion scheduled for User ${userId}, deletion date: ${new Date(deletionDate).toISOString()}`);
     
@@ -142,7 +137,7 @@ export async function scheduleAccountDeletion(userId) {
  */
 export async function cancelAccountDeletion(userId) {
   try {
-    const user = findUserById(userId);
+    const user = await findUserById(userId);
     
     if (!user) {
       throw new Error('User nicht gefunden');
@@ -154,16 +149,14 @@ export async function cancelAccountDeletion(userId) {
       return { wasPending: false };
     }
     
-    // Entferne Löschungs-Datum
-    const db = (await import('../database/db.js')).default();
-    const stmt = db.prepare(`
-      UPDATE users 
-      SET deletion_scheduled_at = NULL,
-          updated_at = ?
-      WHERE id = ?
-    `);
-    
-    stmt.run(Date.now(), userId);
+    // Entferne Löschungs-Datum (Knex + PostgreSQL)
+    const db = getDatabase();
+    await db('users')
+      .where('id', userId)
+      .update({
+        deletion_scheduled_at: null,
+        updated_at: Date.now()
+      });
     
     logger.info(`Account deletion cancelled for User ${userId}`);
     
@@ -184,17 +177,15 @@ export async function cancelAccountDeletion(userId) {
  */
 export async function executeScheduledDeletions() {
   try {
-    const db = (await import('../database/db.js')).default();
+    const db = getDatabase();
     
     const now = Date.now();
     
-    // Finde alle zu löschenden Accounts
-    const usersToDelete = db.prepare(`
-      SELECT id, email, deletion_scheduled_at
-      FROM users
-      WHERE deletion_scheduled_at IS NOT NULL
-        AND deletion_scheduled_at <= ?
-    `).all(now);
+    // Finde alle zu löschenden Accounts (Knex + PostgreSQL)
+    const usersToDelete = await db('users')
+      .select('id', 'email', 'deletion_scheduled_at')
+      .whereNotNull('deletion_scheduled_at')
+      .where('deletion_scheduled_at', '<=', now);
     
     if (usersToDelete.length === 0) {
       logger.info('No accounts scheduled for deletion');
@@ -208,8 +199,7 @@ export async function executeScheduledDeletions() {
     for (const user of usersToDelete) {
       try {
         // Lösche User (CASCADE löscht verknüpfte Daten)
-        const deleteStmt = db.prepare('DELETE FROM users WHERE id = ?');
-        deleteStmt.run(user.id);
+        await db('users').where('id', user.id).delete();
         
         logger.info(`Deleted user ${user.id} (${user.email}) - scheduled for ${new Date(user.deletion_scheduled_at).toISOString()}`);
         

@@ -4,7 +4,6 @@
  */
 
 import * as Sentry from '@sentry/react';
-import { BrowserTracing } from '@sentry/tracing';
 
 /**
  * Initialisiert Sentry für Frontend
@@ -29,21 +28,17 @@ export function initSentry() {
     // Integrations
     integrations: [
       // React-spezifische Integrations
-      new Sentry.BrowserTracing({
-        // Routing-Instrumentation (für React Router, falls verwendet)
-        routingInstrumentation: Sentry.reactRouterV6Instrumentation(
-          window.history,
-          window.location
-        ),
-      }),
+      new Sentry.BrowserTracing(),
       // Replay-Integration für Session-Recordings (optional)
-      new Sentry.Replay({
-        maskAllText: true,
-        blockAllMedia: true,
-        // Nur bei Errors aufnehmen (Privacy!)
-        sessionSampleRate: 0,
-        errorSampleRate: ENV === 'production' ? 0.1 : 1.0,
-      }),
+      // Deaktiviert in Development um Probleme zu vermeiden
+      ...(ENV === 'production' ? [
+        new Sentry.Replay({
+          maskAllText: true,
+          blockAllMedia: true,
+          sessionSampleRate: 0,
+          errorSampleRate: 0.1,
+        })
+      ] : []),
     ],
 
     // Performance-Monitoring

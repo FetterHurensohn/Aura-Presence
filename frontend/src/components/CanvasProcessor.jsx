@@ -11,7 +11,7 @@ import { showError, showWarning } from '../services/toastService';
 // MediaPipe Drawing Utils und Konstanten (von window)
 // Diese werden von den CDN-Scripts in index.html geladen
 
-function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
+function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted, onFpsUpdate, onDetectionStatus }) {
   const canvasRef = useRef(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState(null);
@@ -25,6 +25,10 @@ function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
     faceMesh: null,
     hands: null
   });
+
+  // FPS Tracking
+  const fpsHistoryRef = useRef([]);
+  const frameCountRef = useRef(0);
 
   // Target FPS für Processing (limitiert Performance-Last)
   const TARGET_FPS = 15;
@@ -75,6 +79,22 @@ function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
       if (timestamp - lastProcessTimeRef.current < FRAME_INTERVAL) {
         animationFrameRef.current = requestAnimationFrame(processFrame);
         return;
+      }
+
+      // FPS berechnen
+      const frameDelta = timestamp - lastProcessTimeRef.current;
+      const currentFps = 1000 / frameDelta;
+      fpsHistoryRef.current.push(currentFps);
+      frameCountRef.current++;
+
+      // FPS alle 30 Frames aktualisieren (um Performance nicht zu beeinträchtigen)
+      if (frameCountRef.current >= 30) {
+        const avgFps = fpsHistoryRef.current.reduce((a, b) => a + b, 0) / fpsHistoryRef.current.length;
+        if (onFpsUpdate) {
+          onFpsUpdate(Math.round(avgFps));
+        }
+        fpsHistoryRef.current = [];
+        frameCountRef.current = 0;
       }
 
       lastProcessTimeRef.current = timestamp;
@@ -236,8 +256,45 @@ function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
       }
     }
 
+    // Detection Status an Parent senden
+    if (onDetectionStatus) {
+      const detectionStatus = {
+        pose: !!unifiedResults.pose?.poseLandmarks,
+        face: !!(unifiedResults.faceMesh?.multiFaceLandmarks && unifiedResults.faceMesh.multiFaceLandmarks.length > 0),
+        hands: !!(unifiedResults.hands?.multiHandLandmarks && unifiedResults.hands.multiHandLandmarks.length > 0),
+        handsCount: unifiedResults.hands?.multiHandLandmarks?.length || 0,
+        confidence: calculateAverageConfidence(unifiedResults)
+      };
+      onDetectionStatus(detectionStatus);
+    }
+
     // Status-Overlay
     drawStatusOverlay(ctx, unifiedResults);
+  };
+
+  /**
+   * Berechne durchschnittliche Confidence
+   */
+  const calculateAverageConfidence = (unifiedResults) => {
+    const confidences = [];
+    
+    // Pose confidence (basierend auf Visibility-Score)
+    if (unifiedResults.pose?.poseLandmarks) {
+      const avgVisibility = unifiedResults.pose.poseLandmarks.reduce((sum, lm) => sum + (lm.visibility || 0.5), 0) / unifiedResults.pose.poseLandmarks.length;
+      confidences.push(avgVisibility);
+    }
+    
+    // Face confidence (wenn vorhanden, nehmen wir an dass es gut erkannt wurde)
+    if (unifiedResults.faceMesh?.multiFaceLandmarks && unifiedResults.faceMesh.multiFaceLandmarks.length > 0) {
+      confidences.push(0.9); // Face Mesh hat keine explizite Confidence, daher Annahme
+    }
+    
+    // Hands confidence
+    if (unifiedResults.hands?.multiHandLandmarks && unifiedResults.hands.multiHandLandmarks.length > 0) {
+      confidences.push(0.85); // Hands haben auch keine explizite Confidence
+    }
+    
+    return confidences.length > 0 ? confidences.reduce((a, b) => a + b, 0) / confidences.length : 0;
   };
 
   /**

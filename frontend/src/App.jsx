@@ -12,6 +12,7 @@ import Register from './components/Auth/Register';
 import Dashboard from './components/Dashboard';
 import AnalysisView from './components/AnalysisView';
 import Settings from './pages/Settings';
+import Subscription from './pages/Subscription';
 import Datenschutz from './pages/Datenschutz';
 import AGB from './pages/AGB';
 import Impressum from './pages/Impressum';
@@ -83,6 +84,10 @@ function App() {
             <Route 
               path="/settings" 
               element={user ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/subscription" 
+              element={user ? <Subscription user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/datenschutz" 

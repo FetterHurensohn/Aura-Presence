@@ -202,6 +202,59 @@
   margin: 0;
 }
 
+/* Mini Trend Graph */
+.metric-trend {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 30px;
+  margin: 0.5rem 0;
+  padding: 0.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.trend-bar {
+  flex: 1;
+  background: linear-gradient(to top, var(--primary), var(--accent));
+  border-radius: 2px;
+  min-height: 2px;
+  transition: all 0.3s ease;
+}
+
+.trend-bar:hover {
+  opacity: 1 !important;
+  transform: scaleY(1.1);
+}
+
+/* Smooth Transitions für Updates */
+.feedback-container {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.metric-item {
+  transition: all 0.3s ease;
+}
+
+.metric-item:hover {
+  transform: translateX(4px);
+}
+
+.metric-fill {
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Flags Card */
 .flags-card h4 {
   margin-bottom: 1rem;

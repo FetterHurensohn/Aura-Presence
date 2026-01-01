@@ -1,104 +1,87 @@
 /**
- * User Model - Datenbankoperationen für Benutzer
+ * User Model (Knex + PostgreSQL)
+ * Production-ready mit PostgreSQL über Knex
  */
 
-import getDatabase from '../database/db.js';
 import bcrypt from 'bcrypt';
-import logger from '../utils/logger.js';
+import { getDatabase } from '../database/dbKnex.js';
 
-const SALT_ROUNDS = 12;
+const BCRYPT_ROUNDS = 10;
 
 /**
  * Benutzer erstellen
  */
-export function createUser(email, password) {
+export async function createUser(email, password) {
   const db = getDatabase();
-  const passwordHash = bcrypt.hashSync(password, SALT_ROUNDS);
-  const now = Date.now();
-  
-  try {
-    const stmt = db.prepare(`
-      INSERT INTO users (email, password_hash, created_at, updated_at)
-      VALUES (?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(email, passwordHash, now, now);
-    
-    return {
-      id: result.lastInsertRowid,
-      email,
-      subscription_status: 'none',
-      created_at: now
-    };
-  } catch (error) {
-    if (error.code === 'SQLITE_CONSTRAINT') {
-      throw new Error('E-Mail bereits registriert');
-    }
-    logger.error('Fehler beim Erstellen des Benutzers:', error);
-    throw error;
-  }
+  const passwordHash = bcrypt.hashSync(password, BCRYPT_ROUNDS);
+  const timestamp = Date.now();
+
+  const [userId] = await db('users').insert({
+    email,
+    password_hash: passwordHash,
+    created_at: timestamp,
+    updated_at: timestamp,
+  }).returning('id');
+
+  // PostgreSQL returning() gibt ein Objekt zurück: { id: 123 }
+  const id = typeof userId === 'object' ? userId.id : userId;
+
+  return findUserById(id);
 }
 
 /**
- * Benutzer per E-Mail finden
+ * Benutzer nach E-Mail finden
  */
-export function findUserByEmail(email) {
+export async function findUserByEmail(email) {
   const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
-  return stmt.get(email);
+  return await db('users').where('email', email).first();
 }
 
 /**
- * Benutzer per ID finden
+ * Benutzer nach ID finden
  */
-export function findUserById(id) {
+export async function findUserById(id) {
   const db = getDatabase();
-  const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
-  return stmt.get(id);
+  return await db('users').where('id', id).first();
 }
 
 /**
- * Passwort verifizieren
+ * Passwort überprüfen
  */
-export function verifyPassword(plainPassword, passwordHash) {
-  return bcrypt.compareSync(plainPassword, passwordHash);
+export function verifyPassword(password, passwordHash) {
+  return bcrypt.compareSync(password, passwordHash);
 }
 
 /**
- * Stripe Customer ID aktualisieren
+ * Stripe Customer ID speichern
  */
-export function updateStripeCustomerId(userId, customerId) {
+export async function updateStripeCustomerId(userId, stripeCustomerId) {
   const db = getDatabase();
-  const stmt = db.prepare(`
-    UPDATE users 
-    SET stripe_customer_id = ?, updated_at = ?
-    WHERE id = ?
-  `);
-  
-  stmt.run(customerId, Date.now(), userId);
+  return await db('users')
+    .where('id', userId)
+    .update({
+      stripe_customer_id: stripeCustomerId,
+      updated_at: Date.now(),
+    });
 }
 
 /**
- * Subscription-Status aktualisieren
+ * Subscription aktualisieren
  */
-export function updateSubscription(userId, status, plan, periodEnd) {
+export async function updateSubscription(userId, status, plan, periodEnd) {
   const db = getDatabase();
-  const stmt = db.prepare(`
-    UPDATE users 
-    SET subscription_status = ?, 
-        subscription_plan = ?, 
-        subscription_current_period_end = ?,
-        updated_at = ?
-    WHERE id = ?
-  `);
-  
-  stmt.run(status, plan, periodEnd, Date.now(), userId);
-  
-  logger.info(`Subscription aktualisiert für User ${userId}: ${status}`);
+  return await db('users')
+    .where('id', userId)
+    .update({
+      subscription_status: status,
+      subscription_plan: plan,
+      subscription_current_period_end: periodEnd,
+      updated_at: Date.now(),
+    });
 }
 
 /**
- * Benutzer ohne sensible Daten zurückgeben
+ * Benutzer ohne Passwort-Hash zurückgeben (für API-Responses)
  */
 export function sanitizeUser(user) {
   if (!user) return null;
@@ -106,8 +89,4 @@ export function sanitizeUser(user) {
   const { password_hash, ...sanitized } = user;
   return sanitized;
 }
-
-
-
-
 

@@ -1,11 +1,14 @@
 /**
  * Cookie Banner - DSGVO-konforme Einwilligungsabfrage
- * Erscheint bei erstem Besuch oder nach Consent-Widerruf
+ * Redesigned mit Design-System Modal
  */
 
 import React, { useState } from 'react';
 import { acceptAll, acceptEssential, saveGranularConsent } from '../services/consentService';
-import './CookieBanner.css';
+import Modal from '../design-system/components/Modal';
+import Button from '../design-system/components/Button';
+import Checkbox from '../design-system/components/Checkbox';
+import Icon from '../design-system/components/Icon';
 
 function CookieBanner({ onAccept }) {
   const [showDetails, setShowDetails] = useState(false);
@@ -35,149 +38,155 @@ function CookieBanner({ onAccept }) {
   };
 
   return (
-    <div className="cookie-banner-overlay">
-      <div className="cookie-banner">
-        <div className="cookie-banner-content">
-          <h3>🍪 Diese Website verwendet Cookies</h3>
-          
-          {!showDetails ? (
-            <>
-              <p>
-                Wir verwenden Cookies und ähnliche Technologien, um dir die bestmögliche Erfahrung zu bieten. 
-                Einige sind essenziell für den Betrieb der Website, während andere uns helfen, die Performance 
-                zu verbessern und deine Erfahrung zu personalisieren.
-              </p>
-              
-              <div className="cookie-banner-actions">
-                <button 
-                  className="btn btn-primary"
-                  onClick={handleAcceptAll}
-                  data-test="accept-all"
-                >
-                  Alle akzeptieren
-                </button>
-                
-                <button 
-                  className="btn btn-secondary"
-                  onClick={handleAcceptEssential}
-                >
-                  Nur Essentielle
-                </button>
-                
-                <button 
-                  className="btn btn-link"
-                  onClick={() => setShowDetails(true)}
-                >
-                  Einstellungen anpassen
-                </button>
-              </div>
-              
-              <p className="cookie-banner-note">
+    <Modal
+      open={true}
+      onClose={() => {}} // Kann nicht geschlossen werden, nur über Buttons
+      title={showDetails ? "Cookie-Einstellungen" : "🍪 Cookie-Einwilligung"}
+      size="md"
+    >
+      {!showDetails ? (
+        <>
+          <div className="space-y-4">
+            <p className="text-white leading-relaxed">
+              Wir verwenden Cookies und ähnliche Technologien, um dir die bestmögliche Erfahrung zu bieten. 
+              Einige sind essenziell für den Betrieb der Website, während andere uns helfen, die Performance 
+              zu verbessern und deine Erfahrung zu personalisieren.
+            </p>
+
+            <div className="bg-surface-700 rounded-button p-4 flex items-start gap-3">
+              <Icon name="info" size={24} color="cyan" className="mt-0.5" />
+              <p className="text-sm text-muted-500 leading-relaxed">
                 Weitere Informationen findest du in unserer{' '}
-                <a href="/datenschutz" target="_blank" rel="noopener noreferrer">
+                <a 
+                  href="/datenschutz" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-accent-500 hover:text-accent-400 transition-colors duration-base"
+                >
                   Datenschutzerklärung
                 </a>.
               </p>
-            </>
-          ) : (
-            <>
-              <p>Wähle, welche Datenverarbeitung du erlauben möchtest:</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 mt-6">
+            <Button 
+              variant="primary"
+              size="lg"
+              fullWidth
+              icon="check"
+              onClick={handleAcceptAll}
+              data-test="accept-all"
+            >
+              Alle akzeptieren
+            </Button>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Button 
+                variant="secondary"
+                size="md"
+                onClick={handleAcceptEssential}
+              >
+                Nur Essentielle
+              </Button>
               
-              <div className="cookie-options">
-                <div className="cookie-option">
-                  <div className="cookie-option-header">
-                    <input 
-                      type="checkbox" 
-                      checked={true} 
-                      disabled 
-                      id="consent-essential"
-                    />
-                    <label htmlFor="consent-essential">
-                      <strong>Essenziell</strong>
-                    </label>
-                  </div>
-                  <p className="cookie-option-description">
-                    Erforderlich für Login, Session-Management und grundlegende Funktionen. 
-                    Kann nicht deaktiviert werden.
-                  </p>
-                </div>
-                
-                <div className="cookie-option">
-                  <div className="cookie-option-header">
-                    <input 
-                      type="checkbox" 
-                      checked={granular.analytics}
-                      onChange={() => handleToggle('analytics')}
-                      id="consent-analytics"
-                    />
-                    <label htmlFor="consent-analytics">
-                      <strong>Analytics</strong>
-                    </label>
-                  </div>
-                  <p className="cookie-option-description">
-                    Ermöglicht anonymisierte Nutzungsstatistiken und Error-Tracking (Sentry) 
-                    zur Verbesserung der App.
-                  </p>
-                </div>
-                
-                <div className="cookie-option">
-                  <div className="cookie-option-header">
-                    <input 
-                      type="checkbox" 
-                      checked={granular.camera}
-                      onChange={() => handleToggle('camera')}
-                      id="consent-camera"
-                    />
-                    <label htmlFor="consent-camera">
-                      <strong>Kamera-Zugriff</strong>
-                    </label>
-                  </div>
-                  <p className="cookie-option-description">
-                    Erforderlich für die Video-Analyse mit MediaPipe. 
-                    <strong> Keine Videos werden übertragen oder gespeichert</strong> – 
-                    nur strukturierte Metriken.
-                  </p>
-                </div>
-                
-                <div className="cookie-option">
-                  <div className="cookie-option-header">
-                    <input 
-                      type="checkbox" 
-                      checked={granular.ai}
-                      onChange={() => handleToggle('ai')}
-                      id="consent-ai"
-                    />
-                    <label htmlFor="consent-ai">
-                      <strong>KI-Interpretation</strong>
-                    </label>
-                  </div>
-                  <p className="cookie-option-description">
-                    Sendet strukturierte Verhaltensmetriken an OpenAI zur Generierung 
-                    von personalisiertem Feedback. Ohne diese Option: Basis-Feedback nur.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="cookie-banner-actions">
-                <button 
-                  className="btn btn-primary"
-                  onClick={handleSaveGranular}
-                >
-                  Auswahl speichern
-                </button>
-                
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => setShowDetails(false)}
-                >
-                  Zurück
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+              <Button 
+                variant="ghost"
+                size="md"
+                icon="settings"
+                onClick={() => setShowDetails(true)}
+              >
+                Anpassen
+              </Button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-white mb-4">
+            Wähle, welche Datenverarbeitung du erlauben möchtest:
+          </p>
+
+          <div className="space-y-4">
+            {/* Essential */}
+            <div className="bg-surface-700 rounded-button p-4">
+              <Checkbox
+                checked={true}
+                disabled
+                label={<span className="font-semibold">Essenziell</span>}
+              />
+              <p className="text-sm text-muted-500 mt-2 ml-7 leading-relaxed">
+                Erforderlich für Login, Session-Management und grundlegende Funktionen. 
+                Kann nicht deaktiviert werden.
+              </p>
+            </div>
+
+            {/* Analytics */}
+            <div className="bg-surface-700 rounded-button p-4">
+              <Checkbox
+                checked={granular.analytics}
+                onChange={() => handleToggle('analytics')}
+                label={<span className="font-semibold">Analytics</span>}
+              />
+              <p className="text-sm text-muted-500 mt-2 ml-7 leading-relaxed">
+                Ermöglicht anonymisierte Nutzungsstatistiken und Error-Tracking (Sentry) 
+                zur Verbesserung der App.
+              </p>
+            </div>
+
+            {/* Camera */}
+            <div className="bg-surface-700 rounded-button p-4">
+              <Checkbox
+                checked={granular.camera}
+                onChange={() => handleToggle('camera')}
+                label={<span className="font-semibold">Kamera-Zugriff</span>}
+              />
+              <p className="text-sm text-muted-500 mt-2 ml-7 leading-relaxed">
+                Erforderlich für die Video-Analyse mit MediaPipe.{' '}
+                <span className="text-success font-medium">
+                  Keine Videos werden übertragen oder gespeichert
+                </span>{' '}
+                – nur strukturierte Metriken.
+              </p>
+            </div>
+
+            {/* AI */}
+            <div className="bg-surface-700 rounded-button p-4">
+              <Checkbox
+                checked={granular.ai}
+                onChange={() => handleToggle('ai')}
+                label={<span className="font-semibold">KI-Interpretation</span>}
+              />
+              <p className="text-sm text-muted-500 mt-2 ml-7 leading-relaxed">
+                Sendet strukturierte Verhaltensmetriken an OpenAI zur Generierung 
+                von personalisiertem Feedback. Ohne diese Option: Basis-Feedback nur.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <Button 
+              variant="primary"
+              size="lg"
+              fullWidth
+              icon="check"
+              onClick={handleSaveGranular}
+            >
+              Auswahl speichern
+            </Button>
+            
+            <Button 
+              variant="secondary"
+              size="lg"
+              icon="chevron-left"
+              onClick={() => setShowDetails(false)}
+            >
+              Zurück
+            </Button>
+          </div>
+        </>
+      )}
+    </Modal>
   );
 }
 
