@@ -30,7 +30,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { initializeDatabase } from './database/db.js';
+import { initializeDatabase } from './database/dbKnex.js';
 import logger from './utils/logger.js';
 
 // Sentry Error-Tracking
@@ -40,12 +40,16 @@ import {
   sentryErrorHandler 
 } from './utils/sentry.js';
 
+// Middleware
+import { requestLoggerMiddleware } from './middleware/requestLogger.js';
+
 // Routes
 import authRoutes from './routes/auth.js';
 import analyzeRoutes from './routes/analyze.js';
 import subscriptionRoutes from './routes/subscription.js';
 import gdprRoutes from './routes/gdpr.js';
 import sessionsRoutes from './routes/sessions.js';
+import avatarRoutes from './routes/avatar.js';
 
 // Socket.IO Services & Middleware
 import signalingService from './services/signalingService.js';
@@ -86,7 +90,10 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Request Logging
+// Audit Logging Middleware (logs to database)
+app.use(requestLoggerMiddleware);
+
+// Request Logging (logs to console/file)
 app.use((req, res, next) => {
   logger.info(`${req.method} ${req.path}`, {
     ip: req.ip,
@@ -111,6 +118,7 @@ app.use('/api/analyze', analyzeRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/gdpr', gdprRoutes);
 app.use('/api/sessions', sessionsRoutes);
+app.use('/api/avatar', avatarRoutes);
 
 // WebRTC Signaling mit Socket.IO
 // Auth-Middleware für Socket-Connections
@@ -187,4 +195,5 @@ async function startServer() {
 startServer();
 
 export { app, io };
+
 
