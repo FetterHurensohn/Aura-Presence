@@ -56,7 +56,7 @@ Aura Presence ist eine Web-App, die Live-Video per WebRTC empfängt, Frames mit 
 | Komponente | Status | Details |
 |------------|--------|---------|
 | **Auth & Security** | ✅ | JWT + Refresh Tokens, Rate Limiting, Input-Validierung |
-| **Database** | ✅ | PostgreSQL-Support mit Knex.js, Migrations-System |
+| **Database** | ✅ | Supabase PostgreSQL mit Knex.js, Migrations-System |
 | **Payment** | ✅ | Stripe Integration mit Webhook-Handling & Idempotenz |
 | **GDPR** | ✅ | Cookie-Banner, Consent-Management, Data-Export/Deletion |
 | **Monitoring** | ✅ | Sentry (Frontend + Backend), Structured Logging |
@@ -71,7 +71,7 @@ Aura Presence ist eine Web-App, die Live-Video per WebRTC empfängt, Frames mit 
 | Legal-Review durch Anwalt | 🔴 KRITISCH | 1-2 Wochen |
 | Domain kaufen & DNS konfigurieren | 🔴 HOCH | 1 Tag |
 | Hosting-Accounts (Vercel + Railway) | 🔴 HOCH | 1 Tag |
-| PostgreSQL provisionieren | 🔴 HOCH | 2 Stunden |
+| PostgreSQL (Supabase) provisionieren | 🔴 HOCH | 15 Min (kostenlos) |
 | Secrets generieren & setzen | 🔴 HOCH | 2 Stunden |
 | TURN-Server Credentials (Metered.ca) | 🟡 MITTEL | 1 Stunde |
 | Sentry-Projekte erstellen | 🟡 MITTEL | 30 Min |
@@ -117,6 +117,7 @@ aura-presence/
 
 - Node.js >= 18.x
 - npm >= 9.x
+- **Supabase Account** (für PostgreSQL-Datenbank) - [supabase.com](https://supabase.com)
 - (Optional) OpenAI API Key
 - (Optional) Stripe Test-Credentials
 
@@ -145,8 +146,22 @@ cp .env.example .env
 
 Bearbeite `backend/.env` und setze **mindestens**:
 ```env
+# Database (Supabase PostgreSQL)
+DATABASE_URL=postgresql://postgres.[ref]:[password]@aws-1-[region].pooler.supabase.com:6543/postgres
+
+# JWT Secrets
 JWT_SECRET=dein-super-geheimes-jwt-secret-hier-mindestens-32-zeichen-lang
+JWT_REFRESH_SECRET=dein-super-geheimes-refresh-secret-hier-mindestens-32-zeichen-lang
 ```
+
+**Supabase Setup:**
+1. Erstelle ein kostenloses Projekt auf [supabase.com](https://supabase.com)
+2. Gehe zu **Settings** > **Database** > **Connection Pooling**
+3. Wähle **"Transaction" Mode**
+4. Kopiere den Connection String und ersetze `[YOUR-PASSWORD]`
+5. Füge ihn als `DATABASE_URL` in `backend/.env` ein
+
+Siehe [`backend/SUPABASE_MIGRATION.md`](backend/SUPABASE_MIGRATION.md) für eine detaillierte Anleitung.
 
 Für vollständige Funktionalität auch:
 ```env
