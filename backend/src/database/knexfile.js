@@ -7,10 +7,11 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Load .env from backend root (two levels up from this file)
+dotenv.config({ path: join(__dirname, '..', '..', '.env') });
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -32,9 +33,17 @@ function getConfig() {
   
   console.log('✅ PostgreSQL connection configured');
   
+  // Parse connection config for Supabase SSL support
+  const connectionConfig = {
+    connectionString: DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' 
+      ? { rejectUnauthorized: true }
+      : { rejectUnauthorized: false } // Allow self-signed certs in development
+  };
+  
   return {
     client: 'pg',
-    connection: DATABASE_URL,
+    connection: connectionConfig,
     pool: {
       min: parseInt(process.env.DB_POOL_MIN) || 2,
       max: parseInt(process.env.DB_POOL_MAX) || 10,
