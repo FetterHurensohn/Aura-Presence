@@ -1,12 +1,12 @@
 /**
- * Sentry Backend Integration
+ * Sentry Backend Integration (v10+ API)
  * 
  * Wichtig: PII-Scrubbing für Video/Audio-Daten
  * Sentry wird NICHT gestartet wenn SENTRY_ENABLED=false oder keine DSN gesetzt.
  */
 
 import * as Sentry from '@sentry/node';
-import * as Tracing from '@sentry/tracing';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import logger from './logger.js';
 
 /**
@@ -30,7 +30,7 @@ export function initSentry(app) {
     return;
   }
 
-  // Initialize Sentry
+  // Initialize Sentry (v10+ API with setupExpressErrorHandler)
   Sentry.init({
     dsn: sentryDsn,
     environment: process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV || 'development',
@@ -39,10 +39,9 @@ export function initSentry(app) {
     // Tracing - default 5% sample rate
     tracesSampleRate: parseFloat(process.env.SENTRY_TRACES_SAMPLE_RATE) || 0.05,
     
-    // Express Integration
+    // Profiling integration (optional)
     integrations: [
-      new Sentry.Integrations.Http({ tracing: true }),
-      new Tracing.Integrations.Express({ app }),
+      nodeProfilingIntegration(),
     ],
 
     // Max breadcrumbs to avoid memory issues
@@ -78,12 +77,6 @@ export function initSentry(app) {
     },
   });
 
-  // Express Request Handler - MUSS VOR allen anderen Middleware/Routes sein
-  app.use(Sentry.Handlers.requestHandler());
-  
-  // Express Tracing Handler - direkt nach requestHandler
-  app.use(Sentry.Handlers.tracingHandler());
-
   logger.info(`✅ Sentry Backend initialisiert (Environment: ${process.env.SENTRY_ENVIRONMENT || process.env.NODE_ENV})`);
 }
 
@@ -98,7 +91,8 @@ export function registerSentryErrorHandler(app) {
     return;
   }
 
-  app.use(Sentry.Handlers.errorHandler());
+  // v10+ API: setupExpressErrorHandler
+  Sentry.setupExpressErrorHandler(app);
 }
 
 /**
