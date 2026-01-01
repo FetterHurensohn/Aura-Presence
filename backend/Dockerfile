@@ -6,16 +6,19 @@
 
 FROM node:20-alpine
 
+# Install build dependencies for native modules (bcrypt)
+RUN apk add --no-cache python3 make g++
+
 # Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (use npm install since we don't have package-lock.json in backend/)
+# Install dependencies
 # --omit=dev excludes devDependencies
-# --ignore-scripts prevents native modules like better-sqlite3 from building
-RUN npm install --omit=dev --ignore-scripts
+# bcrypt NEEDS to be built (native module for password hashing)
+RUN npm install --omit=dev
 
 # Copy source code
 COPY . .
