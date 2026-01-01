@@ -36,9 +36,7 @@ function getConfig() {
   // Parse connection config for Supabase SSL support
   const connectionConfig = {
     connectionString: DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' 
-      ? { rejectUnauthorized: true }
-      : { rejectUnauthorized: false } // Allow self-signed certs in development
+    ssl: { rejectUnauthorized: false } // Required for Supabase and most cloud PostgreSQL providers
   };
   
   return {
