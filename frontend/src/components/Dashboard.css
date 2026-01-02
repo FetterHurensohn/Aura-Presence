@@ -98,79 +98,104 @@
   background: linear-gradient(90deg, rgba(75, 85, 99, 0) 0%, rgba(75, 85, 99, 1) 10%, rgba(75, 85, 99, 1) 90%, rgba(75, 85, 99, 0) 100%);
 }
 
-/* Session Card */
+/* Session Card - EXAKT NACH FOTO */
 .session-card {
   background: #FFFFFF;
   border: 1px solid #E0E0E0;
   border-radius: 12px;
-  padding: 1rem;
+  padding: 1.25rem;
 }
 
-.session-header {
+/* Top: Titel + Thumbnail nebeneinander */
+.session-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.session-info {
+.session-left {
   flex: 1;
+  min-width: 0;
 }
 
 .session-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.5rem 0;
+  font-family: 'Roboto', sans-serif;
 }
 
 .session-date {
-  font-size: 13px;
-  color: #4B5563;
+  font-size: 15px;
+  color: #000000;
   margin: 0.25rem 0;
+  font-weight: 400;
+  font-family: 'Roboto', sans-serif;
 }
 
 .session-type {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   color: #000000;
   margin: 0.25rem 0;
+  font-family: 'Roboto', sans-serif;
 }
 
 .session-thumbnail {
-  width: 120px;
-  height: 68px;
+  width: 125px;
+  height: 70px;
   background: #4B5563;
-  border-radius: 8px;
+  border-radius: 6px;
   flex-shrink: 0;
 }
 
-.session-body {
-  margin-bottom: 1rem;
+/* Metriken: 2 Spalten */
+.session-metrics {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.25rem;
 }
 
-.session-metrics-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem 1.5rem;
+.metrics-col-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.metric-item {
+.metrics-col-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.metric-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .metric-label {
-  font-size: 13px;
+  font-size: 15px;
   color: #000000;
   font-weight: 400;
+  font-family: 'Roboto', sans-serif;
 }
 
 .metric-value {
-  font-size: 13px;
+  font-size: 15px;
   color: #000000;
   font-weight: 700;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Footer */
+.session-footer {
+  text-align: center;
 }
 
 .details-link {

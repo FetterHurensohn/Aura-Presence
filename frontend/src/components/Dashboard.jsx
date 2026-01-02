@@ -93,41 +93,50 @@ function Dashboard({ user, onLogout }) {
         <section className="dashboard-section">
           <h2 className="section-title">Sessions</h2>
           <div className="session-card">
-            <div className="session-header">
-              <div className="session-info">
+            {/* Header: Titel + Thumbnail */}
+            <div className="session-top">
+              <div className="session-left">
                 <h3 className="session-title">Letzte Sitzung</h3>
                 <p className="session-date">{lastSession.date}</p>
                 <p className="session-type">{lastSession.type}</p>
               </div>
               <div className="session-thumbnail"></div>
             </div>
-            <div className="session-body">
-              <div className="session-metrics-grid">
-                <div className="metric-item">
+
+            {/* Metriken: 2 Spalten (3 links, 2 rechts) */}
+            <div className="session-metrics">
+              <div className="metrics-col-left">
+                <div className="metric-row">
                   <span className="metric-label">Augenkontakt:</span>
                   <span className="metric-value">{lastSession.metrics.augenkontakt}</span>
                 </div>
-                <div className="metric-item">
-                  <span className="metric-label">Inhalt:</span>
-                  <span className="metric-value">{lastSession.metrics.inhalt}</span>
-                </div>
-                <div className="metric-item">
+                <div className="metric-row">
                   <span className="metric-label">Gestik:</span>
                   <span className="metric-value">{lastSession.metrics.gestik}</span>
                 </div>
-                <div className="metric-item">
-                  <span className="metric-label">Stimme:</span>
-                  <span className="metric-value">{lastSession.metrics.stimme}</span>
-                </div>
-                <div className="metric-item">
+                <div className="metric-row">
                   <span className="metric-label">Mimik:</span>
                   <span className="metric-value">{lastSession.metrics.mimik}</span>
                 </div>
               </div>
+              <div className="metrics-col-right">
+                <div className="metric-row">
+                  <span className="metric-label">Inhalt:</span>
+                  <span className="metric-value">{lastSession.metrics.inhalt}</span>
+                </div>
+                <div className="metric-row">
+                  <span className="metric-label">Stimme:</span>
+                  <span className="metric-value">{lastSession.metrics.stimme}</span>
+                </div>
+              </div>
             </div>
-            <button className="details-link" onClick={() => navigate('/sessions')}>
-              Details ansehen
-            </button>
+
+            {/* Details Link */}
+            <div className="session-footer">
+              <button className="details-link" onClick={() => navigate('/sessions')}>
+                Details ansehen
+              </button>
+            </div>
           </div>
         </section>
 
