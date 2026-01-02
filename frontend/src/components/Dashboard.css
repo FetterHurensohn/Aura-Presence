@@ -16,6 +16,9 @@
 }
 
 .user-avatar {
+  position: fixed;
+  top: 1rem;
+  right: 1.5rem;
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -28,6 +31,7 @@
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(51, 11, 145, 0.3);
+  z-index: 200;
 }
 
 /* Main Content */
