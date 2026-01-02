@@ -15,6 +15,17 @@ import Settings from './pages/Settings';
 import Datenschutz from './pages/Datenschutz';
 import AGB from './pages/AGB';
 import Impressum from './pages/Impressum';
+// New Pages
+import SessionPrepare from './pages/SessionPrepare';
+import LiveSession from './pages/LiveSession';
+import AnalysisResult from './pages/AnalysisResult';
+import Sessions from './pages/Sessions';
+import SessionDetail from './pages/SessionDetail';
+import Insights from './pages/Insights';
+import Account from './pages/Account';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import Methodology from './pages/Methodology';
+import AdminPanel from './pages/AdminPanel';
 import { getCurrentUser } from './services/authService';
 import './App.css';
 
@@ -83,6 +94,52 @@ function App() {
               path="/settings" 
               element={user ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
             />
+            
+            {/* Session Flow */}
+            <Route 
+              path="/session-prepare" 
+              element={user ? <SessionPrepare /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/live-session" 
+              element={user ? <LiveSession /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/analysis-result" 
+              element={user ? <AnalysisResult /> : <Navigate to="/login" />} 
+            />
+            
+            {/* Sessions & History */}
+            <Route 
+              path="/sessions" 
+              element={user ? <Sessions /> : <Navigate to="/login" />} 
+            />
+            <Route 
+              path="/session/:id" 
+              element={user ? <SessionDetail /> : <Navigate to="/login" />} 
+            />
+            
+            {/* Insights */}
+            <Route 
+              path="/insights" 
+              element={user ? <Insights /> : <Navigate to="/login" />} 
+            />
+            
+            {/* Account & Settings */}
+            <Route 
+              path="/account" 
+              element={user ? <Account user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
+            />
+            
+            {/* Privacy & Compliance */}
+            <Route 
+              path="/privacy-policy" 
+              element={<PrivacyPolicy />} 
+            />
+            <Route 
+              path="/methodology" 
+              element={<Methodology />} 
+            />
             <Route 
               path="/datenschutz" 
               element={<Datenschutz />} 
@@ -95,6 +152,13 @@ function App() {
               path="/impressum" 
               element={<Impressum />} 
             />
+            
+            {/* Admin (role-based) */}
+            <Route 
+              path="/admin" 
+              element={user ? <AdminPanel user={user} /> : <Navigate to="/login" />} 
+            />
+            
             <Route 
               path="/" 
               element={<Navigate to={user ? "/dashboard" : "/login"} />} 

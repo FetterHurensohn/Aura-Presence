@@ -1,0 +1,243 @@
+/* Sessions Page Styles */
+
+.sessions-page {
+  min-height: 100vh;
+  background: #0a0f1e;
+  padding-bottom: 2rem;
+}
+
+.sessions-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.sessions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.back-btn {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: #6366f1;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sessions-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.new-session-btn {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border: none;
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+}
+
+.new-session-btn:hover {
+  transform: translateY(-2px);
+}
+
+.sessions-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: #151b2e;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #6366f1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.sessions-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.session-card {
+  background: #151b2e;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  border-radius: 16px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.session-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateX(4px);
+}
+
+.session-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.session-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(99, 102, 241, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+}
+
+.date-day {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #6366f1;
+  line-height: 1;
+}
+
+.date-month {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.session-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.session-type-badge {
+  font-size: 1rem;
+}
+
+.session-card-score {
+  display: flex;
+  justify-content: center;
+}
+
+.score-circle-small {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.score-circle-small svg {
+  transform: rotate(-90deg);
+  width: 100%;
+  height: 100%;
+}
+
+.score-value-small {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #6366f1;
+}
+
+.session-card-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mini-metric {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem;
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 6px;
+  min-width: 120px;
+}
+
+.mini-metric-label {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+}
+
+.mini-metric-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.session-card-arrow {
+  font-size: 1.5rem;
+  color: #6366f1;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.session-card:hover .session-card-arrow {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .session-card {
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+  }
+  
+  .session-card-score {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+  }
+  
+  .session-card-metrics {
+    grid-column: 1 / -1;
+    flex-direction: row;
+  }
+  
+  .session-card-arrow {
+    grid-column: 3 / 4;
+    grid-row: 1 / 2;
+  }
+}
+
