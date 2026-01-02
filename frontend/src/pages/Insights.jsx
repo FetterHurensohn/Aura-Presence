@@ -27,7 +27,7 @@ function Insights({ user }) {
   const sessionTypes = [
     { name: 'Präsentation', value: 29 },
     { name: 'Pitch', value: 29 },
-    { name: 'Verkaufsgespräch', value: 29 },
+    { name: 'Verkauf', value: 29 },
     { name: 'Verhandlung', value: 29 },
     { name: 'Interview', value: 29 }
   ];
@@ -115,9 +115,9 @@ function Insights({ user }) {
           </div>
         </section>
 
-        {/* Statistik Section 2 - Progress Bars */}
+        {/* Kurse Section - Progress Bars */}
         <section className="insights-section">
-          <h2 className="section-heading">Statistik</h2>
+          <h2 className="section-heading">Kurse</h2>
           
           <div className="insights-progress-list">
             {sessionTypes.map((item, index) => (
