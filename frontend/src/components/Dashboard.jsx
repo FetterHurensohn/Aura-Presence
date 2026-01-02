@@ -89,51 +89,52 @@ function Dashboard({ user, onLogout }) {
           </button>
         </div>
 
-        {/* Sessions Section */}
+        {/* Sessions Section - VON NULL NEU */}
         <section className="dashboard-section">
           <h2 className="section-title">Sessions</h2>
-          <div className="session-card">
-            {/* Header: Titel + Thumbnail */}
-            <div className="session-top">
-              <div className="session-left">
-                <h3 className="session-title">Letzte Sitzung</h3>
-                <p className="session-date">{lastSession.date}</p>
-                <p className="session-type">{lastSession.type}</p>
+          
+          <div className="session-card-new">
+            {/* Zeile 1: Info + Thumbnail */}
+            <div className="session-row-1">
+              <div className="session-text">
+                <div className="session-title-new">Letzte Sitzung</div>
+                <div className="session-date-new">01.01.2026</div>
+                <div className="session-type-new">Pitch</div>
               </div>
-              <div className="session-thumbnail"></div>
+              <div className="session-thumb"></div>
             </div>
 
-            {/* Metriken: 2 Spalten (3 links, 2 rechts) */}
-            <div className="session-metrics">
-              <div className="metrics-col-left">
-                <div className="metric-row">
-                  <span className="metric-label">Augenkontakt:</span>
-                  <span className="metric-value">{lastSession.metrics.augenkontakt}</span>
+            {/* Zeile 2: Metriken */}
+            <div className="session-row-2">
+              <div className="session-col-1">
+                <div className="session-metric">
+                  <span>Augenkontakt:</span>
+                  <span className="session-val">100</span>
                 </div>
-                <div className="metric-row">
-                  <span className="metric-label">Gestik:</span>
-                  <span className="metric-value">{lastSession.metrics.gestik}</span>
+                <div className="session-metric">
+                  <span>Gestik:</span>
+                  <span className="session-val">100</span>
                 </div>
-                <div className="metric-row">
-                  <span className="metric-label">Mimik:</span>
-                  <span className="metric-value">{lastSession.metrics.mimik}</span>
+                <div className="session-metric">
+                  <span>Mimik:</span>
+                  <span className="session-val">100</span>
                 </div>
               </div>
-              <div className="metrics-col-right">
-                <div className="metric-row">
-                  <span className="metric-label">Inhalt:</span>
-                  <span className="metric-value">{lastSession.metrics.inhalt}</span>
+              <div className="session-col-2">
+                <div className="session-metric">
+                  <span>Inhalt:</span>
+                  <span className="session-val">100</span>
                 </div>
-                <div className="metric-row">
-                  <span className="metric-label">Stimme:</span>
-                  <span className="metric-value">{lastSession.metrics.stimme}</span>
+                <div className="session-metric">
+                  <span>Stimme:</span>
+                  <span className="session-val">100</span>
                 </div>
               </div>
             </div>
 
-            {/* Details Link */}
-            <div className="session-footer">
-              <button className="details-link" onClick={() => navigate('/sessions')}>
+            {/* Zeile 3: Details Link */}
+            <div className="session-row-3">
+              <button className="session-details" onClick={() => navigate('/sessions')}>
                 Details ansehen
               </button>
             </div>

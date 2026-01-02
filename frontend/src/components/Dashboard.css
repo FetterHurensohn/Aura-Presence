@@ -98,104 +98,100 @@
   background: linear-gradient(90deg, rgba(75, 85, 99, 0) 0%, rgba(75, 85, 99, 1) 10%, rgba(75, 85, 99, 1) 90%, rgba(75, 85, 99, 0) 100%);
 }
 
-/* Session Card - EXAKT NACH FOTO */
-.session-card {
+/* ========== SESSION CARD - KOMPLETT NEU VON NULL ========== */
+
+.session-card-new {
   background: #FFFFFF;
   border: 1px solid #E0E0E0;
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 1rem;
 }
 
-/* Top: Titel + Thumbnail nebeneinander */
-.session-top {
+/* Zeile 1: Text + Thumbnail */
+.session-row-1 {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
-.session-left {
-  flex: 1;
-  min-width: 0;
+.session-text {
+  display: flex;
+  flex-direction: column;
 }
 
-.session-title {
+.session-title-new {
+  font-family: 'Roboto', sans-serif;
   font-size: 15px;
   font-weight: 700;
   color: #000000;
-  margin: 0 0 0.5rem 0;
-  font-family: 'Roboto', sans-serif;
+  margin-bottom: 0.25rem;
 }
 
-.session-date {
+.session-date-new {
+  font-family: 'Roboto', sans-serif;
   font-size: 15px;
-  color: #000000;
-  margin: 0.25rem 0;
   font-weight: 400;
-  font-family: 'Roboto', sans-serif;
+  color: #000000;
+  margin-bottom: 0.25rem;
 }
 
-.session-type {
+.session-type-new {
+  font-family: 'Roboto', sans-serif;
   font-size: 15px;
   font-weight: 700;
   color: #000000;
-  margin: 0.25rem 0;
-  font-family: 'Roboto', sans-serif;
 }
 
-.session-thumbnail {
+.session-thumb {
   width: 125px;
   height: 70px;
   background: #4B5563;
-  border-radius: 6px;
+  border-radius: 8px;
   flex-shrink: 0;
 }
 
-/* Metriken: 2 Spalten */
-.session-metrics {
+/* Zeile 2: Metriken */
+.session-row-2 {
   display: flex;
   gap: 2rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 
-.metrics-col-left {
+.session-col-1,
+.session-col-2 {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.metrics-col-right {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.metric-row {
+.session-metric {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-}
-
-.metric-label {
-  font-size: 15px;
-  color: #000000;
-  font-weight: 400;
   font-family: 'Roboto', sans-serif;
-}
-
-.metric-value {
   font-size: 15px;
   color: #000000;
+}
+
+.session-val {
   font-weight: 700;
-  font-family: 'Roboto', sans-serif;
 }
 
-/* Footer */
-.session-footer {
+/* Zeile 3: Details */
+.session-row-3 {
   text-align: center;
+}
+
+.session-details {
+  background: none;
+  border: none;
+  font-family: 'Roboto', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #000000;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
 }
 
 .details-link {
