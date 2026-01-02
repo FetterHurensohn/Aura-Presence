@@ -28,8 +28,9 @@
 }
 
 .auth-logo svg {
-  width: 96px;
-  height: 96px;
+  width: 96px !important;
+  height: 96px !important;
+  display: block;
   animation: float 3s ease-in-out infinite;
 }
 
