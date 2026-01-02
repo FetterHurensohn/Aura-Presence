@@ -18,7 +18,7 @@ import logger from './utils/logger.js';
 import { 
   initSentry, 
   sentryRequestHandler, 
-  sentryErrorHandler 
+  registerSentryErrorHandler 
 } from './utils/sentry.js';
 
 // Routes
@@ -108,8 +108,13 @@ app.get('/api/signaling/stats', (req, res) => {
   res.json(stats);
 });
 
-// Sentry Error Handler MUSS vor eigenem Error-Handler stehen
-app.use(sentryErrorHandler());
+// TEST ROUTE für Sentry (nur für Development/Testing)
+app.get('/test/sentry', (req, res) => {
+  throw new Error('TEST: Sentry Error Capture funktioniert!');
+});
+
+// Sentry Error Handler MUSS nach allen Routes registriert werden
+registerSentryErrorHandler(app);
 
 // Global Error Handler (mit standardisiertem Format)
 app.use((err, req, res, next) => {

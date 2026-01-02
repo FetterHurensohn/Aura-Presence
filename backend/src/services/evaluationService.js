@@ -295,13 +295,13 @@ function evaluateFacialExpression(expression) {
     'frowning': { score: 0.5, description: 'Stirnrunzeln' }
   };
   
-  const eval = expressionScores[expression] || expressionScores['neutral'];
+  const expressionData = expressionScores[expression] || expressionScores['neutral'];
   
   return {
     value: expression,
     status: expression,
-    score: eval.score,
-    description: eval.description
+    score: expressionData.score,
+    description: expressionData.description
   };
 }
 
