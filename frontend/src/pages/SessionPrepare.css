@@ -70,7 +70,16 @@
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
   position: relative;
-  border-bottom: 1px solid #E0E0E0;
+}
+
+.section-heading::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(75, 85, 99, 0) 0%, rgba(75, 85, 99, 1) 10%, rgba(75, 85, 99, 1) 90%, rgba(75, 85, 99, 0) 100%);
 }
 
 /* Technick-Check */
