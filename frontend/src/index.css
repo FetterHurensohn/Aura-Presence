@@ -6,25 +6,36 @@
 
 @layer base {
   * {
-    @apply box-border m-0 p-0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
   }
 
   body {
-    @apply font-sans bg-bg-900 text-white antialiased;
+    font-family: 'Inter', sans-serif;
+    background-color: #0a0f1e;
+    color: white;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
-    @apply min-h-screen;
+    min-height: 100vh;
   }
 }
 
 @layer components {
   /* Custom Component Utilities */
   .card-elevated {
-    @apply bg-surface-800 rounded-card shadow-md;
+    background-color: #151b2e;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
 
   .btn-base {
-    @apply px-4 py-2 rounded-button font-semibold transition-base;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
   }
 }
