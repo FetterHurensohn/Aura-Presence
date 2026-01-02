@@ -1,132 +1,171 @@
 /**
- * Sessions Page - Liste aller Sessions + Detail View
+ * Sessions Page - Liste aller vergangenen Sessions
+ * EXAKT 1:1 nach Foto
  */
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BottomNav from '../components/BottomNav';
 import './Sessions.css';
 
-function Sessions() {
+function Sessions({ user }) {
   const navigate = useNavigate();
-  
-  // Mock Data
-  const sessions = [
-    { id: 1, date: '2026-01-02', duration: 25, type: 'focus', confidence: 87, posture: 82, eyeContact: 91 },
-    { id: 2, date: '2026-01-01', duration: 30, type: 'coach', confidence: 84, posture: 85, eyeContact: 83 },
-    { id: 3, date: '2025-12-30', duration: 20, type: 'focus', confidence: 79, posture: 78, eyeContact: 80 },
-    { id: 4, date: '2025-12-28', duration: 28, type: 'coach', confidence: 88, posture: 90, eyeContact: 86 },
-    { id: 5, date: '2025-12-25', duration: 15, type: 'focus', confidence: 82, posture: 81, eyeContact: 83 },
-  ];
+  const [visibleSessions, setVisibleSessions] = useState(5);
+
+  // Mock Data - 10 Sessions
+  const allSessions = Array(10).fill(null).map((_, index) => ({
+    id: index + 1,
+    date: '01.01.2026',
+    type: 'Pitch',
+    metrics: {
+      augenkontakt: 100,
+      inhalt: 100,
+      gestik: 100,
+      stimme: 100,
+      mimik: 100
+    }
+  }));
+
+  const sessions = allSessions.slice(0, visibleSessions);
+
+  const loadMore = () => {
+    setVisibleSessions(prev => Math.min(prev + 5, allSessions.length));
+  };
+
+  // Get user initial
+  const getUserInitial = () => {
+    if (user?.name) return user.name.charAt(0).toUpperCase();
+    if (user?.email) return user.email.charAt(0).toUpperCase();
+    return 'J';
+  };
 
   return (
-    <div className="sessions-page">
-      <div className="sessions-container">
-        {/* Header */}
-        <header className="sessions-header">
-          <div className="header-content">
-            <button className="back-btn" onClick={() => navigate('/dashboard')}>
-              ← Zurück
-            </button>
-            <h1 className="sessions-title">Meine Sessions</h1>
-          </div>
-          <button 
-            className="new-session-btn"
-            onClick={() => navigate('/session-prepare')}
-          >
-            <span>+</span>
-            <span>Neue Session</span>
-          </button>
-        </header>
-
-        {/* Stats Overview */}
-        <section className="sessions-stats">
-          <div className="stat-card">
-            <span className="stat-value">{sessions.length}</span>
-            <span className="stat-label">Gesamt</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-value">
-              {Math.floor(sessions.reduce((acc, s) => acc + s.confidence, 0) / sessions.length)}%
-            </span>
-            <span className="stat-label">Ø Confidence</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-value">
-              {Math.floor(sessions.reduce((acc, s) => acc + s.duration, 0) / 60)}h
-            </span>
-            <span className="stat-label">Gesamtzeit</span>
-          </div>
-        </section>
-
-        {/* Sessions List */}
-        <section className="sessions-list">
-          {sessions.map(session => (
-            <div 
-              key={session.id}
-              className="session-card"
-              onClick={() => navigate(`/session/${session.id}`, { state: { session } })}
-            >
-              <div className="session-card-header">
-                <div className="session-date">
-                  <span className="date-day">
-                    {new Date(session.date).toLocaleDateString('de-DE', { day: '2-digit' })}
-                  </span>
-                  <span className="date-month">
-                    {new Date(session.date).toLocaleDateString('de-DE', { month: 'short' })}
-                  </span>
-                </div>
-                <div className="session-meta">
-                  <span className="session-type-badge">
-                    {session.type === 'focus' ? '🎯' : '💬'}
-                  </span>
-                  <span className="session-duration">{session.duration} min</span>
-                </div>
-              </div>
-
-              <div className="session-card-score">
-                <div className="score-circle-small">
-                  <svg viewBox="0 0 36 36">
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="#2d3748"
-                      strokeWidth="3"
-                    />
-                    <path
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="#6366f1"
-                      strokeWidth="3"
-                      strokeDasharray={`${session.confidence}, 100`}
-                    />
-                  </svg>
-                  <span className="score-value-small">{session.confidence}%</span>
-                </div>
-              </div>
-
-              <div className="session-card-metrics">
-                <div className="mini-metric">
-                  <span className="mini-metric-label">Haltung</span>
-                  <span className="mini-metric-value">{session.posture}%</span>
-                </div>
-                <div className="mini-metric">
-                  <span className="mini-metric-label">Blick</span>
-                  <span className="mini-metric-value">{session.eyeContact}%</span>
-                </div>
-              </div>
-
-              <div className="session-card-arrow">→</div>
-            </div>
-          ))}
-        </section>
+    <div className="sessions-page-new">
+      {/* Account Button - fixiert */}
+      <div className="sessions-account-btn" onClick={() => navigate('/account')}>
+        {getUserInitial()}
       </div>
 
-      {/* Bottom Navigation */}
-      <BottomNav />
+      {/* Content */}
+      <div className="sessions-content-new">
+        {/* Titel */}
+        <h1 className="sessions-title-new">Sessions</h1>
+
+        {/* Session Cards */}
+        <div className="sessions-list-new">
+          {sessions.map((session) => (
+            <div key={session.id} className="session-card-new">
+              {/* Zeile 1: Info + Thumbnail */}
+              <div className="session-row-1">
+                <div className="session-text">
+                  <div className="session-title-text">Letzte Sitzung</div>
+                  <div className="session-date-text">{session.date}</div>
+                  <div className="session-type-text">{session.type}</div>
+                </div>
+                <div className="session-thumb"></div>
+              </div>
+
+              {/* Zeile 2: Metriken */}
+              <div className="session-row-2">
+                <div className="session-col-1">
+                  <div className="session-metric">
+                    <span>Augenkontakt:</span>
+                    <span className="session-val">{session.metrics.augenkontakt}</span>
+                  </div>
+                  <div className="session-metric">
+                    <span>Gestik:</span>
+                    <span className="session-val">{session.metrics.gestik}</span>
+                  </div>
+                  <div className="session-metric">
+                    <span>Mimik:</span>
+                    <span className="session-val">{session.metrics.mimik}</span>
+                  </div>
+                </div>
+                <div className="session-col-2">
+                  <div className="session-metric">
+                    <span>Inhalt:</span>
+                    <span className="session-val">{session.metrics.inhalt}</span>
+                  </div>
+                  <div className="session-metric">
+                    <span>Stimme:</span>
+                    <span className="session-val">{session.metrics.stimme}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Zeile 3: Details */}
+              <div className="session-row-3">
+                <button 
+                  className="session-details" 
+                  onClick={() => navigate(`/session/${session.id}`)}
+                >
+                  Details ansehen
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Mehr Laden Button */}
+        {visibleSessions < allSessions.length && (
+          <div className="sessions-load-more">
+            <button className="load-more-btn" onClick={loadMore}>
+              <span>Mehr Laden</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7 10l5 5 5-5z"/>
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {/* Spacer für Bottom Nav */}
+        <div style={{ height: '100px' }}></div>
+      </div>
+
+      {/* MENUBAR - GLEICH WIE DASHBOARD */}
+      <nav className="menubar-new">
+        {/* Links: Linie ÜBER Icons */}
+        <div className="menubar-left">
+          <div className="menubar-line"></div>
+          <div className="menubar-icons">
+            <button className="menubar-icon" onClick={() => navigate('/dashboard')}>
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M22,5.724V2c0-.552-.447-1-1-1s-1,.448-1,1v2.366L14.797,.855c-1.699-1.146-3.895-1.146-5.594,0L2.203,5.579c-1.379,.931-2.203,2.48-2.203,4.145v9.276c0,2.757,2.243,5,5,5h3c.553,0,1-.448,1-1V15c0-.551,.448-1,1-1h4c.552,0,1,.449,1,1v8c0,.552,.447,1,1,1h3c2.757,0,5-2.243,5-5V9.724c0-1.581-.744-3.058-2-4Zm0,13.276c0,1.654-1.346,3-3,3h-2v-7c0-1.654-1.346-3-3-3h-4c-1.654,0-3,1.346-3,3v7h-2c-1.654,0-3-1.346-3-3V9.724c0-.999,.494-1.929,1.322-2.487L10.322,2.513c1.02-.688,2.336-.688,3.355,0l7,4.724c.828,.558,1.322,1.488,1.322,2.487v9.276Z"/>
+              </svg>
+            </button>
+            <button className="menubar-icon active" onClick={() => navigate('/sessions')}>
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="m16,10.111l-7,3.889v-7.778l7,3.889Zm8,7.889c0,3.309-2.691,6-6,6s-6-2.691-6-6,2.691-6,6-6,6,2.691,6,6Zm-2,0c0-2.206-1.794-4-4-4s-4,1.794-4,4,1.794,4,4,4,4-1.794,4-4Zm-3-3h-2v3.423l2.079,2.019,1.393-1.435-1.472-1.43v-2.577ZM21,0H3C1.346,0,0,1.346,0,3v17h10.262c-.165-.64-.262-1.308-.262-2H2V3c0-.551.448-1,1-1h18c.552,0,1,.449,1,1v8.079c.754.437,1.428.992,2,1.642V3c0-1.654-1.346-3-3-3Z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Mitte: Großer Button */}
+        <button className="menubar-center-btn" onClick={() => navigate('/session-prepare')}>
+          <svg viewBox="0 0 24 24" fill="white">
+            <path d="m16.395,10.122l-5.192-2.843c-.673-.379-1.473-.372-2.138.017-.667.39-1.064,1.083-1.064,1.855v5.699c0,.772.397,1.465,1.064,1.855.34.199.714.297,1.087.297.358,0,.716-.091,1.041-.274l5.212-2.854c.687-.386,1.096-1.086,1.096-1.873s-.409-1.487-1.105-1.878Zm-.961,2.003l-5.212,2.855c-.019.01-.077.042-.147-.001-.074-.043-.074-.107-.074-.128v-5.699c0-.021,0-.085.074-.128.027-.016.052-.021.074-.021.036,0,.065.016.083.026l5.192,2.844c.019.011.076.043.076.13s-.058.119-.066.125ZM12,0C5.383,0,0,5.383,0,12s5.383,12,12,12,12-5.383,12-12S18.617,0,12,0Zm0,22c-5.514,0-10-4.486-10-10S6.486,2,12,2s10,4.486,10,10-4.486,10-10,10Z"/>
+          </svg>
+        </button>
+
+        {/* Rechts: Linie ÜBER Icons */}
+        <div className="menubar-right">
+          <div className="menubar-line"></div>
+          <div className="menubar-icons">
+            <button className="menubar-icon" onClick={() => navigate('/insights')}>
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M23,22H5a3,3,0,0,1-3-3V1A1,1,0,0,0,0,1V19a5.006,5.006,0,0,0,5,5H23a1,1,0,0,0,0-2Z"/><path d="M6,20a1,1,0,0,0,1-1V12a1,1,0,0,0-2,0v7A1,1,0,0,0,6,20Z"/><path d="M10,10v9a1,1,0,0,0,2,0V10a1,1,0,0,0-2,0Z"/><path d="M15,13v6a1,1,0,0,0,2,0V13a1,1,0,0,0-2,0Z"/><path d="M20,9V19a1,1,0,0,0,2,0V9a1,1,0,0,0-2,0Z"/><path d="M6,9a1,1,0,0,0,.707-.293l3.586-3.586a1.025,1.025,0,0,1,1.414,0l2.172,2.172a3,3,0,0,0,4.242,0l5.586-5.586A1,1,0,0,0,22.293.293L16.707,5.878a1,1,0,0,1-1.414,0L13.121,3.707a3,3,0,0,0-4.242,0L5.293,7.293A1,1,0,0,0,6,9Z"/>
+              </svg>
+            </button>
+            <button className="menubar-icon" onClick={() => navigate('/account')}>
+              <svg viewBox="0 0 512 512" fill="currentColor">
+                <path d="M470.549,111.573L313.237,36.629c-34.628-20.684-77.728-21.051-112.704-0.96L41.451,111.573c-0.597,0.299-1.216,0.619-1.792,0.96c-37.752,21.586-50.858,69.689-29.272,107.441c7.317,12.798,18.08,23.284,31.064,30.266l43.883,20.907V375.68c0.026,46.743,30.441,88.039,75.072,101.931c31.059,8.985,63.264,13.384,95.595,13.056c32.326,0.362,64.531-4,95.595-12.949c44.631-13.891,75.046-55.188,75.072-101.931V271.104l42.667-20.395v175.957c0,11.782,9.551,21.333,21.333,21.333c11.782,0,21.333-9.551,21.333-21.333v-256C512.143,145.615,492.363,122.473,470.549,111.573z M384,375.787c0.011,27.959-18.129,52.69-44.8,61.077c-27.046,7.728-55.073,11.479-83.2,11.136c-28.127,0.343-56.154-3.408-83.2-11.136c-26.671-8.388-44.811-33.118-44.8-61.077v-84.309l70.763,33.707c17.46,10.368,37.401,15.816,57.707,15.765c19.328,0.137,38.331-4.98,54.976-14.805L384,291.477V375.787z M452.267,211.733l-160.896,76.8c-22.434,13.063-50.241,12.693-72.32-0.96l-157.419-74.88c-17.547-9.462-24.101-31.357-14.639-48.903c3.2-5.934,7.998-10.853,13.85-14.201l159.893-76.373c22.441-13.034,50.233-12.665,72.32,0.96l157.312,74.944c11.569,6.424,18.807,18.555,18.965,31.787C469.354,193.441,462.9,205.097,452.267,211.733L452.267,211.733z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </nav>
     </div>
   );
 }
 
 export default Sessions;
-

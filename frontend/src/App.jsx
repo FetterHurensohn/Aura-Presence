@@ -112,7 +112,7 @@ function App() {
             {/* Sessions & History */}
             <Route 
               path="/sessions" 
-              element={user ? <Sessions /> : <Navigate to="/login" />} 
+              element={user ? <Sessions user={user} /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/session/:id" 
