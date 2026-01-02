@@ -413,6 +413,10 @@
   color: #000000;
 }
 
+.menubar-icon.active {
+  color: #330B91;
+}
+
 /* Mitte: Großer Button - MITTE AUF HÖHE DER STRICHE */
 .menubar-center-btn {
   background: #330B91;
