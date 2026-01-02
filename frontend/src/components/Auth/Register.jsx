@@ -46,7 +46,7 @@ function Register({ onLogin }) {
       const user = await register(email, password);
       onLogin(user);
       showSuccess('Erfolgreich registriert! Willkommen bei Aura Presence.');
-      navigate('/dashboard');
+      navigate('/onboarding');
     } catch (err) {
       setError(err.response?.data?.message || 'Registrierung fehlgeschlagen. Bitte versuche es erneut.');
       console.error('Registrierungs-Fehler:', err);

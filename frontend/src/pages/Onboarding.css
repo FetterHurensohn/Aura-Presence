@@ -1,0 +1,264 @@
+/* ========== ONBOARDING PAGE - GLEICHER STIL WIE LOGIN/REGISTER ========== */
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@400;700&display=swap');
+
+.onboarding-container {
+  min-height: 100vh;
+  background: #F7F8FA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  font-family: 'Roboto', sans-serif;
+}
+
+.onboarding-card {
+  background: transparent;
+  max-width: 450px;
+  width: 100%;
+  padding: 0;
+  text-align: center;
+}
+
+/* Logo */
+.onboarding-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.onboarding-logo svg {
+  width: 96px !important;
+  height: 96px !important;
+  display: block;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+/* Brand */
+.onboarding-brand {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 2.5rem 0;
+  letter-spacing: -0.3px;
+}
+
+/* Progress Indicator */
+.onboarding-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2.5rem;
+  gap: 0.5rem;
+}
+
+.progress-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #E0E0E0;
+  transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+  background: #330B91;
+  transform: scale(1.2);
+}
+
+.progress-line {
+  width: 40px;
+  height: 2px;
+  background: #E0E0E0;
+}
+
+/* Content */
+.onboarding-content {
+  margin-bottom: 2rem;
+}
+
+.onboarding-step {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Title */
+.onboarding-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.75rem;
+  position: relative;
+}
+
+.onboarding-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(75, 85, 99, 0) 0%, rgba(75, 85, 99, 1) 10%, rgba(75, 85, 99, 1) 90%, rgba(75, 85, 99, 0) 100%);
+}
+
+/* Form */
+.onboarding-form {
+  margin-top: 1.5rem;
+}
+
+.onboarding-input-group {
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.onboarding-label {
+  display: block;
+  font-family: 'Roboto', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 0.5rem;
+}
+
+.onboarding-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #E0E0E0;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 15px;
+  color: #000000;
+  transition: background 0.2s;
+  box-sizing: border-box;
+}
+
+.onboarding-input:focus {
+  outline: none;
+  background: #BDBDBD;
+}
+
+.onboarding-input::placeholder {
+  color: #4B5563;
+  opacity: 0.6;
+}
+
+.onboarding-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Select specific styling */
+select.onboarding-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%234B5563' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+/* Actions */
+.onboarding-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.onboarding-button {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border-radius: 25px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.onboarding-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.onboarding-button.primary {
+  background: #330B91;
+  color: #FFFFFF;
+  box-shadow: none;
+}
+
+.onboarding-button.primary:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.onboarding-button.primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.onboarding-button.secondary {
+  background: #FFFFFF;
+  color: #000000;
+  border: 1.5px solid #E0E0E0;
+}
+
+.onboarding-button.secondary:hover:not(:disabled) {
+  background: #F7F8FA;
+  border-color: #BDBDBD;
+}
+
+/* Step Indicator */
+.onboarding-step-indicator {
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  color: #4B5563;
+  margin-top: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .onboarding-title {
+    font-size: 26px;
+  }
+
+  .onboarding-brand {
+    font-size: 22px;
+  }
+
+  .onboarding-logo svg {
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  .onboarding-actions {
+    flex-direction: column;
+  }
+
+  .onboarding-button.secondary {
+    order: 2;
+  }
+
+  .onboarding-button.primary {
+    order: 1;
+  }
+}
+

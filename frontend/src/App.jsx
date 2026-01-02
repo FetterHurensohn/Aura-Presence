@@ -16,6 +16,7 @@ import Datenschutz from './pages/Datenschutz';
 import AGB from './pages/AGB';
 import Impressum from './pages/Impressum';
 // New Pages
+import Onboarding from './pages/Onboarding';
 import SessionPrepare from './pages/SessionPrepare';
 import LiveSession from './pages/LiveSession';
 import AnalysisResult from './pages/AnalysisResult';
@@ -83,6 +84,13 @@ function App() {
               path="/register" 
               element={user ? <Navigate to="/dashboard" /> : <Register onLogin={handleLogin} />} 
             />
+            
+            {/* Onboarding */}
+            <Route 
+              path="/onboarding" 
+              element={user ? <Onboarding user={user} /> : <Navigate to="/login" />} 
+            />
+            
             <Route 
               path="/dashboard" 
               element={user ? <Dashboard user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
