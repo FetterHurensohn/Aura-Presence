@@ -98,7 +98,7 @@ function App() {
             {/* Session Flow */}
             <Route 
               path="/session-prepare" 
-              element={user ? <SessionPrepare /> : <Navigate to="/login" />} 
+              element={user ? <SessionPrepare user={user} /> : <Navigate to="/login" />} 
             />
             <Route 
               path="/live-session" 
