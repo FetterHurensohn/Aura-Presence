@@ -24,12 +24,12 @@
 .auth-logo {
   display: flex;
   justify-content: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .auth-logo svg {
-  width: 80px;
-  height: 80px;
+  width: 96px;
+  height: 96px;
   animation: float 3s ease-in-out infinite;
 }
 
