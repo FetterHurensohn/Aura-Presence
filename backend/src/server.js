@@ -4,44 +4,22 @@
  * Auth, Analyse und Stripe-Integration
  */
 
-// WICHTIG: dotenv MUSS VOR allen anderen Imports geladen werden!
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Lade .env aus dem backend-Verzeichnis
-const envPath = join(__dirname, '..', '.env');
-console.log('🔍 Loading .env from:', envPath);
-const result = dotenv.config({ path: envPath });
-if (result.error) {
-  console.error('❌ Error loading .env:', result.error);
-} else {
-  console.log('✅ .env loaded successfully');
-  console.log('🔑 JWT_SECRET present:', !!process.env.JWT_SECRET);
-  console.log('🔑 JWT_SECRET length:', process.env.JWT_SECRET?.length || 0);
-}
-
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import { initializeDatabase } from './database/dbKnex.js';
+import { initializeDatabase } from './database/db.js';
 import logger from './utils/logger.js';
 
-// Sentry Error-Tracking (MUSS vor allen anderen Importen sein!)
+// Sentry Error-Tracking
 import { 
-  initSentry,
-  registerSentryErrorHandler,
-  captureException
+  initSentry, 
+  sentryRequestHandler, 
+  sentryErrorHandler 
 } from './utils/sentry.js';
-
-// Middleware
-import { requestLoggerMiddleware } from './middleware/requestLogger.js';
 
 // Routes
 import authRoutes from './routes/auth.js';
@@ -49,16 +27,17 @@ import analyzeRoutes from './routes/analyze.js';
 import subscriptionRoutes from './routes/subscription.js';
 import gdprRoutes from './routes/gdpr.js';
 import sessionsRoutes from './routes/sessions.js';
-import avatarRoutes from './routes/avatar.js';
 
 // Socket.IO Services & Middleware
 import signalingService from './services/signalingService.js';
 import socketAuthMiddleware from './middleware/socketAuth.js';
 
-// Initialisiere Sentry DIREKT nach dotenv.config() und VOR Express App
-const app = express();
-initSentry(app); // ← Sentry Init mit Express App
+dotenv.config();
 
+// Initialisiere Sentry DIREKT nach dotenv.config()
+initSentry();
+
+const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
@@ -71,7 +50,8 @@ const io = new Server(httpServer, {
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-// WICHTIG: Sentry Request/Tracing Handler werden automatisch in initSentry() registriert
+// Sentry Request Handler MUSS vor allen anderen Middlewares stehen
+app.use(sentryRequestHandler());
 
 app.use(helmet());
 app.use(cors({
@@ -89,10 +69,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Audit Logging Middleware (logs to database)
-app.use(requestLoggerMiddleware);
-
-// Request Logging (logs to console/file)
+// Request Logging
 app.use((req, res, next) => {
   logger.info(`${req.method} ${req.path}`, {
     ip: req.ip,
@@ -117,7 +94,6 @@ app.use('/api/analyze', analyzeRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/gdpr', gdprRoutes);
 app.use('/api/sessions', sessionsRoutes);
-app.use('/api/avatar', avatarRoutes);
 
 // WebRTC Signaling mit Socket.IO
 // Auth-Middleware für Socket-Connections
@@ -132,24 +108,11 @@ app.get('/api/signaling/stats', (req, res) => {
   res.json(stats);
 });
 
-// TEST ROUTE für Sentry (nur für Development/Testing)
-app.get('/test/sentry', (req, res) => {
-  throw new Error('TEST: Sentry Error Capture funktioniert!');
-});
+// Sentry Error Handler MUSS vor eigenem Error-Handler stehen
+app.use(sentryErrorHandler());
 
-// Sentry Error Handler MUSS nach allen Routes registriert werden
-registerSentryErrorHandler(app);
-
-// Global Error Handler (mit standardisiertem Format + Sentry Capture)
+// Global Error Handler (mit standardisiertem Format)
 app.use((err, req, res, next) => {
-  // Capture Exception in Sentry (falls aktiviert)
-  captureException(err, {
-    path: req.path,
-    method: req.method,
-    query: req.query,
-    userId: req.user?.id
-  });
-
   logger.error('Unbehandelter Fehler:', {
     error: err.message,
     stack: err.stack,
@@ -207,5 +170,4 @@ async function startServer() {
 startServer();
 
 export { app, io };
-
 

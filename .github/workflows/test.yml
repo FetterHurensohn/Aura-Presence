@@ -1,14 +1,14 @@
-name: Test & Build (Supabase)
+name: Test & Build
 
 on:
   push:
-    branches: [ main, develop, feature/use-supabase-db ]
+    branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
 
 jobs:
   backend-test:
-    name: Backend Tests (Supabase)
+    name: Backend Tests
     runs-on: ubuntu-latest
     
     strategy:
@@ -16,19 +16,14 @@ jobs:
         node-version: [18.x, 20.x]
     
     env:
+      JWT_SECRET: test-secret-for-ci-only-min-32-chars
       NODE_ENV: test
-      JWT_SECRET: test-secret-for-ci-only-min-32-chars-long-enough-for-jwt
-      JWT_REFRESH_SECRET: test-refresh-secret-for-ci-only-min-32-chars-long
-      # Supabase Test Database - Add as GitHub Secret
-      DATABASE_URL: ${{ secrets.SUPABASE_TEST_DATABASE_URL }}
-      SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
-      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_TEST_SERVICE_KEY }}
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
     
     - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
@@ -39,52 +34,92 @@ jobs:
         cd backend
         npm ci
     
-    - name: Check Supabase Connection
-      run: |
-        if [ -z "$DATABASE_URL" ]; then
-          echo "⚠️  SUPABASE_TEST_DATABASE_URL not set - using mock mode"
-          echo "   Add secret in GitHub Settings > Secrets and variables > Actions"
-          echo "   Format: postgresql://postgres.[ref]:[pass]@aws-1-[region].pooler.supabase.com:6543/postgres"
-        else
-          echo "✅ Supabase test database configured"
-        fi
-    
-    - name: Run Migrations (if Supabase configured)
-      if: env.DATABASE_URL != ''
+    - name: Create Test .env
       run: |
         cd backend
-        npm run db:migrate
+        echo "NODE_ENV=test" > .env
+        echo "JWT_SECRET=test-secret-for-ci-only-min-32-chars" >> .env
+        echo "DB_PATH=:memory:" >> .env
     
-    - name: Run Unit Tests
+    - name: Run Backend Tests
       run: |
         cd backend
-        npm test -- --testPathIgnorePatterns=integration
-    
-    - name: Run Integration Tests
-      if: env.DATABASE_URL != ''
-      run: |
-        cd backend
-        npm test -- --testPathPattern=integration
+        npm test
     
     - name: Upload Coverage
-      if: matrix.node-version == '20.x'
       uses: codecov/codecov-action@v3
       with:
-        directory: ./backend/coverage
+        files: ./backend/coverage/lcov.info
         flags: backend
-        name: backend-${{ matrix.node-version }}
 
-  frontend-test:
-    name: Frontend Tests
+  database-migration-test:
+    name: PostgreSQL Migration Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: aura_presence_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/aura_presence_test
+      JWT_SECRET: test-secret-for-ci-only-min-32-chars
+      NODE_ENV: test
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+    
+    - name: Install Dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Run Migrations
+      run: |
+        cd backend
+        npm run migrate
+    
+    - name: Verify Schema
+      run: |
+        PGPASSWORD=postgres psql -h localhost -U postgres -d aura_presence_test -c "\dt"
+    
+    - name: Run Tests (PostgreSQL)
+      run: |
+        cd backend
+        npm test
+    
+    - name: Test Rollback
+      run: |
+        cd backend
+        npm run migrate:rollback
+        npm run migrate
+
+  frontend-build:
+    name: Frontend Build
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
     
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v3
       with:
-        node-version: '20.x'
+        node-version: '18.x'
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
     
@@ -92,15 +127,6 @@ jobs:
       run: |
         cd frontend
         npm ci
-    
-    - name: Run Frontend Tests (if available)
-      run: |
-        cd frontend
-        if [ -f "package.json" ] && grep -q '"test"' package.json; then
-          npm test || echo "⚠️  Frontend tests not yet configured"
-        else
-          echo "ℹ️  No frontend tests configured yet"
-        fi
     
     - name: Build Frontend
       run: |
@@ -111,66 +137,53 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: frontend-dist
-        path: frontend/dist
+        path: frontend/dist/
         retention-days: 7
 
-  security-scan:
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+    
+    - name: Install Dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Run ESLint
+      run: |
+        cd frontend
+        npm run lint || true
+      continue-on-error: true
+
+  security:
     name: Security Audit
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
     
     - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-    
-    - name: Run npm audit (Backend)
-      run: |
-        cd backend
-        npm audit --audit-level=high || echo "⚠️  Security issues found - review required"
-    
-    - name: Run npm audit (Frontend)
-      run: |
-        cd frontend
-        npm audit --audit-level=high || echo "⚠️  Security issues found - review required"
-
-  quick-check:
-    name: Quick Check (Fallback)
-    runs-on: ubuntu-latest
-    if: ${{ !secrets.SUPABASE_TEST_DATABASE_URL }}
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v3
       with:
         node-version: '18.x'
     
-    - name: Verify Project Structure
+    - name: Backend Security Audit
       run: |
-        echo "✅ Checking project structure..."
-        ls -la
-        echo "✅ Backend files:"
-        ls -la backend/
-        echo "✅ Frontend files:"
-        ls -la frontend/
-        echo "✅ Project structure verified!"
+        cd backend
+        npm audit --audit-level=moderate
+      continue-on-error: true
     
-    - name: Configuration Notice
+    - name: Frontend Security Audit
       run: |
-        echo "ℹ️  =========================================="
-        echo "ℹ️  Supabase Test Database Not Configured"
-        echo "ℹ️  =========================================="
-        echo ""
-        echo "To enable full integration tests:"
-        echo "1. Create a Supabase test project"
-        echo "2. Add secrets in GitHub Settings > Secrets:"
-        echo "   - SUPABASE_TEST_DATABASE_URL"
-        echo "   - SUPABASE_TEST_URL"
-        echo "   - SUPABASE_TEST_SERVICE_KEY"
-        echo ""
-        echo "Format for DATABASE_URL:"
-        echo "postgresql://postgres.[ref]:[pass]@aws-1-[region].pooler.supabase.com:6543/postgres"
+        cd frontend
+        npm audit --audit-level=moderate
+      continue-on-error: true
+

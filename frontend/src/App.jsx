@@ -12,7 +12,6 @@ import Register from './components/Auth/Register';
 import Dashboard from './components/Dashboard';
 import AnalysisView from './components/AnalysisView';
 import Settings from './pages/Settings';
-import Subscription from './pages/Subscription';
 import Datenschutz from './pages/Datenschutz';
 import AGB from './pages/AGB';
 import Impressum from './pages/Impressum';
@@ -61,7 +60,7 @@ function App() {
   return (
     <ErrorBoundary>
       <ConsentManager>
-        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Router>
         <div className="app">
           <Toaster />
           <Routes>
@@ -86,10 +85,6 @@ function App() {
               element={user ? <Settings user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
             />
             <Route 
-              path="/subscription" 
-              element={user ? <Subscription user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
-            />
-            <Route 
               path="/datenschutz" 
               element={<Datenschutz />} 
             />
@@ -109,7 +104,7 @@ function App() {
           <Footer />
         </div>
       </Router>
-    </ConsentManager>
+      </ConsentManager>
     </ErrorBoundary>
   );
 }

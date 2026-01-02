@@ -3,22 +3,19 @@
  * Verwaltet MediaStream (Kamera, WebRTC oder Demo-Video)
  */
 
-import React, { useRef, useEffect, useState, useImperativeHandle, forwardRef, useCallback } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
-const VideoReceiver = forwardRef(({ children, videoSource = 'camera', uploadedVideoUrl = null }, ref) => {
+function VideoReceiver({ children, videoSource = 'camera' }) {
   const videoRef = useRef(null);
   const [stream, setStream] = useState(null);
   const [error, setError] = useState(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     // Initialisiere basierend auf videoSource
     if (videoSource === 'demo') {
       initializeDemoVideo();
-    } else if (videoSource === 'upload') {
-      initializeUploadedVideo();
     } else {
       requestCameraAccess();
     }
@@ -29,7 +26,7 @@ const VideoReceiver = forwardRef(({ children, videoSource = 'camera', uploadedVi
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [videoSource, uploadedVideoUrl]);
+  }, [videoSource]);
 
   /**
    * Kamera-Zugriff anfordern
@@ -68,36 +65,6 @@ const VideoReceiver = forwardRef(({ children, videoSource = 'camera', uploadedVi
       }
       
       setError(errorMessage);
-    }
-  };
-
-  /**
-   * Initialisiere hochgeladenes Video
-   */
-  const initializeUploadedVideo = () => {
-    try {
-      if (videoRef.current && uploadedVideoUrl) {
-        videoRef.current.src = uploadedVideoUrl;
-        videoRef.current.loop = false;
-        videoRef.current.muted = true;
-        videoRef.current.controls = true; // Show controls for uploaded videos
-        
-        setPermissionGranted(true);
-        setError(null);
-        
-        videoRef.current.onloadedmetadata = () => {
-          setVideoReady(true);
-        };
-        
-        videoRef.current.onerror = () => {
-          setError('Fehler beim Laden des Videos');
-        };
-      } else if (!uploadedVideoUrl) {
-        setError('Kein Video hochgeladen');
-      }
-    } catch (err) {
-      console.error('Fehler beim Initialisieren des hochgeladenen Videos:', err);
-      setError('Fehler beim Laden des Videos');
     }
   };
 
@@ -151,51 +118,6 @@ const VideoReceiver = forwardRef(({ children, videoSource = 'camera', uploadedVi
     }
   };
 
-  /**
-   * Pause Video/Stream
-   */
-  const pause = useCallback(() => {
-    if (videoSource === 'camera' && stream) {
-      // Deaktiviere Tracks (aber stoppe sie nicht komplett)
-      stream.getTracks().forEach(track => {
-        track.enabled = false;
-      });
-      setIsPaused(true);
-    } else if (videoRef.current) {
-      // Pausiere Video-Element
-      videoRef.current.pause();
-      setIsPaused(true);
-    }
-  }, [videoSource, stream]);
-
-  /**
-   * Resume Video/Stream
-   */
-  const resume = useCallback(() => {
-    if (videoSource === 'camera' && stream) {
-      // Reaktiviere Tracks
-      stream.getTracks().forEach(track => {
-        track.enabled = true;
-      });
-      setIsPaused(false);
-    } else if (videoRef.current) {
-      // Setze Video fort
-      videoRef.current.play().catch(err => {
-        console.warn('Video play error:', err);
-      });
-      setIsPaused(false);
-    }
-  }, [videoSource, stream]);
-
-  /**
-   * Expose pause/resume methods via ref
-   */
-  useImperativeHandle(ref, () => ({
-    pause,
-    resume,
-    isPaused
-  }), [pause, resume, isPaused]);
-
   if (error) {
     return (
       <div className="video-error">
@@ -236,7 +158,7 @@ const VideoReceiver = forwardRef(({ children, videoSource = 'camera', uploadedVi
       {children && children(videoRef)}
     </div>
   );
-});
+}
 
 export default VideoReceiver;
 

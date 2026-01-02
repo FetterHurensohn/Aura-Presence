@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Echtzeit-Video-Analyse mit WebRTC, MediaPipe und KI-gestütztem Feedback",
   "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
     "install:all": "npm install && cd frontend && npm install && cd ../backend && npm install",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",

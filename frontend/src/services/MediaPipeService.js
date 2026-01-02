@@ -3,34 +3,18 @@
  * 
  * WICHTIG: Alle MediaPipe-Lösungen verwenden Web-Version (WASM)
  * Alle Berechnungen erfolgen lokal im Browser!
- * 
- * HINWEIS: MediaPipe lädt über CDN-Scripts, nicht über npm-Imports
  */
 
+import { Pose } from '@mediapipe/pose';
+import { Camera } from '@mediapipe/camera_utils';
 import faceMeshService from './MediaPipeFaceMeshService.js';
 import handsService from './MediaPipeHandsService.js';
-
-// Warte bis MediaPipe Libraries geladen sind (von index.html)
-async function waitForMediaPipeLibraries() {
-  let attempts = 0;
-  while ((!window.Pose || !window.Camera) && attempts < 100) {
-    await new Promise(resolve => setTimeout(resolve, 50));
-    attempts++;
-  }
-  
-  if (!window.Pose || !window.Camera) {
-    throw new Error('MediaPipe Libraries konnten nicht geladen werden. Bitte überprüfe deine Internetverbindung und lade die Seite neu.');
-  }
-  
-  console.log('✓ MediaPipe Libraries bereit');
-}
 
 class MediaPipeOrchestratorService {
   constructor() {
     this.pose = null;
     this.camera = null;
     this.isInitialized = false;
-    this.isPoseReady = false; // WICHTIG: Erst true, wenn Assets geladen sind
     
     // Results Storage für Unified Feature Extraction
     this.latestResults = {
@@ -62,18 +46,15 @@ class MediaPipeOrchestratorService {
    */
   async initialize(videoElement, onUnifiedResults) {
     if (this.isInitialized) {
-      // Bereits initialisiert - nichts zu tun
+      console.warn('MediaPipe Orchestrator bereits initialisiert');
       return;
     }
 
     this.onUnifiedResultsCallback = onUnifiedResults;
 
     try {
-      // 0. Warte bis MediaPipe Libraries geladen sind
-      await waitForMediaPipeLibraries();
-      
-      // 1. Pose-Model laden (aus window.Pose)
-      this.pose = new window.Pose({
+      // 1. Pose-Model laden
+      this.pose = new Pose({
         locateFile: (file) => {
           return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
         }
@@ -87,11 +68,6 @@ class MediaPipeOrchestratorService {
       });
 
       this.pose.onResults((results) => {
-        // Markiere Pose als bereit, wenn erste Results kommen (Assets geladen)
-        if (!this.isPoseReady) {
-          this.isPoseReady = true;
-          console.log('✓ MediaPipe Pose bereit (Assets geladen)');
-        }
         this.latestResults.pose = results;
         this.emitUnifiedResults();
       });
@@ -113,8 +89,8 @@ class MediaPipeOrchestratorService {
       }
 
       // Kamera initialisieren (falls videoElement eine echte Kamera ist)
-      if (videoElement && videoElement.srcObject && window.Camera) {
-        this.camera = new window.Camera(videoElement, {
+      if (videoElement && videoElement.srcObject) {
+        this.camera = new Camera(videoElement, {
           onFrame: async () => {
             if (this.pose && videoElement.readyState >= 2) {
               await this.pose.send({ image: videoElement });
@@ -162,8 +138,7 @@ class MediaPipeOrchestratorService {
     try {
       switch (currentModel) {
         case 'pose':
-          // Nur senden, wenn Pose bereit ist (Assets geladen)
-          if (this.pose && this.isPoseReady) {
+          if (this.pose) {
             await this.pose.send({ image: imageSource });
           }
           break;
@@ -179,16 +154,7 @@ class MediaPipeOrchestratorService {
           break;
       }
     } catch (error) {
-      // Unterdrücke Fehler während Assets laden (normal beim Start)
-      const isLoadingPose = !this.isPoseReady && currentModel === 'pose';
-      const isLoadingFaceMesh = !faceMeshService.isFaceMeshReady && currentModel === 'faceMesh';
-      const isLoadingHands = !handsService.isHandsReady && currentModel === 'hands';
-      
-      if (isLoadingPose || isLoadingFaceMesh || isLoadingHands) {
-        // Still loading assets, ignore error
-      } else {
-        console.error(`Fehler beim Verarbeiten von ${currentModel}:`, error);
-      }
+      console.error(`Fehler beim Verarbeiten von ${currentModel}:`, error);
     }
 
     // Rotiere zum nächsten Model
@@ -237,7 +203,6 @@ class MediaPipeOrchestratorService {
     
     this.camera = null;
     this.isInitialized = false;
-    this.isPoseReady = false; // Reset Pose-Ready-Flag
     this.onUnifiedResultsCallback = null;
     this.latestResults = { pose: null, faceMesh: null, hands: null };
     

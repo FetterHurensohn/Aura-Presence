@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getSubscriptionStatus, createCheckoutSession } from '../services/apiService';
+import { captureError, addBreadcrumb } from '../services/sentryService';
 import NavBar from '../design-system/components/NavBar';
 import Card from '../design-system/components/Card';
 import Button from '../design-system/components/Button';
@@ -47,6 +48,34 @@ function Dashboard({ user, onLogout }) {
     }
   };
 
+  // TEST: Sentry Error Handler (nur für Development)
+  const handleTestSentryError = () => {
+    addBreadcrumb('User clicked Sentry Test button', { component: 'Dashboard' });
+    
+    try {
+      // Simuliere einen Fehler
+      const undefinedVar = null;
+      undefinedVar.someMethod(); // TypeError
+    } catch (error) {
+      captureError(error, {
+        tags: {
+          component: 'Dashboard',
+          testType: 'manual',
+        },
+        extra: {
+          userId: user?.id,
+          timestamp: new Date().toISOString(),
+        },
+      });
+      alert('✅ Test-Error wurde an Sentry gesendet! Prüfe Sentry Dashboard.');
+    }
+  };
+
+  const handleTestSentryBoundary = () => {
+    // Trigger ErrorBoundary
+    throw new Error('TEST: Frontend ErrorBoundary funktioniert!');
+  };
+
   // Mock-Daten für Statistiken (können später dynamisch geladen werden)
   const stats = {
     totalAnalyses: 42,
@@ -70,6 +99,29 @@ function Dashboard({ user, onLogout }) {
             <p className="text-muted-500">
               Hier ist deine Übersicht über deine Analysen und Aktivitäten.
             </p>
+
+            {/* Sentry Test Buttons (nur Development) */}
+            {import.meta.env.MODE === 'development' && (
+              <div className="mt-4 p-4 bg-warning/10 border border-warning/30 rounded-lg">
+                <p className="text-warning font-semibold mb-2">🧪 Sentry Test (Development Only)</p>
+                <div className="flex gap-3">
+                  <Button 
+                    variant="secondary" 
+                    size="small"
+                    onClick={handleTestSentryError}
+                  >
+                    Test Error Capture
+                  </Button>
+                  <Button 
+                    variant="secondary" 
+                    size="small"
+                    onClick={handleTestSentryBoundary}
+                  >
+                    Test ErrorBoundary
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Metric Cards Grid */}

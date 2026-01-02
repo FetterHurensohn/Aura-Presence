@@ -26,22 +26,6 @@ function ConsentManager({ children }) {
     return unsubscribe;
   }, []);
 
-  // Blockiere Body-Scroll wenn Banner angezeigt wird
-  useEffect(() => {
-    if (showBanner) {
-      document.body.style.overflow = 'hidden';
-      document.body.style.paddingRight = `${window.innerWidth - document.documentElement.clientWidth}px`;
-    } else {
-      document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
-    };
-  }, [showBanner]);
-
   const handleAccept = () => {
     setShowBanner(false);
   };

@@ -1,17 +1,16 @@
 /**
  * MediaPipe Hands Service - Hand-Tracking mit 21 Landmarks pro Hand
  * 
- * WICHTIG: Verwendet window.Hands (geladen von index.html CDN)
+ * WICHTIG: Verwendet @mediapipe/hands Web-Version (WASM)
  * Alle Berechnungen erfolgen lokal im Browser!
  */
 
-// Keine Imports nötig - Hands kommt von window.Hands
+import { Hands } from '@mediapipe/hands';
 
 class MediaPipeHandsService {
   constructor() {
     this.hands = null;
     this.isInitialized = false;
-    this.isHandsReady = false; // WICHTIG: Erst true, wenn Assets geladen sind
     this.onResultsCallback = null;
     
     // Konfiguration
@@ -28,19 +27,15 @@ class MediaPipeHandsService {
    */
   async initialize(onResults) {
     if (this.isInitialized) {
-      // Bereits initialisiert - nichts zu tun
+      console.warn('MediaPipe Hands bereits initialisiert');
       return;
     }
 
     this.onResultsCallback = onResults;
 
     try {
-      // Hands Model laden (von window.Hands)
-      if (!window.Hands) {
-        throw new Error('window.Hands nicht verfügbar. MediaPipe Scripts nicht geladen?');
-      }
-      
-      this.hands = new window.Hands({
+      // Hands Model laden
+      this.hands = new Hands({
         locateFile: (file) => {
           // CDN-URL für MediaPipe-Dateien
           return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
@@ -57,11 +52,6 @@ class MediaPipeHandsService {
 
       // Ergebnis-Handler
       this.hands.onResults((results) => {
-        // Markiere Hands als bereit, wenn erste Results kommen (Assets geladen)
-        if (!this.isHandsReady) {
-          this.isHandsReady = true;
-          console.log('✓ MediaPipe Hands bereit (Assets geladen)');
-        }
         if (this.onResultsCallback) {
           this.onResultsCallback(results);
         }
@@ -84,10 +74,7 @@ class MediaPipeHandsService {
       throw new Error('MediaPipe Hands nicht initialisiert');
     }
 
-    // Nur senden, wenn Hands bereit ist (Assets geladen)
-    if (this.isHandsReady) {
-      await this.hands.send({ image: imageSource });
-    }
+    await this.hands.send({ image: imageSource });
   }
 
   /**
@@ -100,17 +87,16 @@ class MediaPipeHandsService {
     }
     
     this.isInitialized = false;
-    this.isHandsReady = false; // Reset Hands-Ready-Flag
     this.onResultsCallback = null;
     
     console.log('✓ MediaPipe Hands geschlossen');
   }
 
   /**
-   * Prüfe ob initialisiert und bereit
+   * Prüfe ob initialisiert
    */
   isReady() {
-    return this.isInitialized && this.hands !== null && this.isHandsReady;
+    return this.isInitialized && this.hands !== null;
   }
 }
 

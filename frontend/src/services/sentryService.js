@@ -25,18 +25,16 @@ export function initSentry() {
     // Release-Tracking (kann via CI/CD gesetzt werden)
     release: import.meta.env.VITE_SENTRY_RELEASE || undefined,
 
-    // Integrations
+    // Integrations (Sentry v10 API)
     integrations: [
       // React-spezifische Integrations
-      new Sentry.BrowserTracing(),
+      Sentry.browserTracingIntegration(),
       // Replay-Integration für Session-Recordings (optional)
       // Deaktiviert in Development um Probleme zu vermeiden
       ...(ENV === 'production' ? [
-        new Sentry.Replay({
+        Sentry.replayIntegration({
           maskAllText: true,
           blockAllMedia: true,
-          sessionSampleRate: 0,
-          errorSampleRate: 0.1,
         })
       ] : []),
     ],

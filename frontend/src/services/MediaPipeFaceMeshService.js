@@ -1,17 +1,16 @@
 /**
  * MediaPipe Face Mesh Service - Gesichtserkennung mit 468 Landmarks
  * 
- * WICHTIG: Verwendet window.FaceMesh (geladen von index.html CDN)
+ * WICHTIG: Verwendet @mediapipe/face_mesh Web-Version (WASM)
  * Alle Berechnungen erfolgen lokal im Browser!
  */
 
-// Keine Imports nötig - FaceMesh kommt von window.FaceMesh
+import { FaceMesh } from '@mediapipe/face_mesh';
 
 class MediaPipeFaceMeshService {
   constructor() {
     this.faceMesh = null;
     this.isInitialized = false;
-    this.isFaceMeshReady = false; // WICHTIG: Erst true, wenn Assets geladen sind
     this.onResultsCallback = null;
     
     // Konfiguration
@@ -28,19 +27,15 @@ class MediaPipeFaceMeshService {
    */
   async initialize(onResults) {
     if (this.isInitialized) {
-      // Bereits initialisiert - nichts zu tun
+      console.warn('MediaPipe Face Mesh bereits initialisiert');
       return;
     }
 
     this.onResultsCallback = onResults;
 
     try {
-      // Face Mesh Model laden (von window.FaceMesh)
-      if (!window.FaceMesh) {
-        throw new Error('window.FaceMesh nicht verfügbar. MediaPipe Scripts nicht geladen?');
-      }
-      
-      this.faceMesh = new window.FaceMesh({
+      // Face Mesh Model laden
+      this.faceMesh = new FaceMesh({
         locateFile: (file) => {
           // CDN-URL für MediaPipe-Dateien
           return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -57,11 +52,6 @@ class MediaPipeFaceMeshService {
 
       // Ergebnis-Handler
       this.faceMesh.onResults((results) => {
-        // Markiere FaceMesh als bereit, wenn erste Results kommen (Assets geladen)
-        if (!this.isFaceMeshReady) {
-          this.isFaceMeshReady = true;
-          console.log('✓ MediaPipe Face Mesh bereit (Assets geladen)');
-        }
         if (this.onResultsCallback) {
           this.onResultsCallback(results);
         }
@@ -84,10 +74,7 @@ class MediaPipeFaceMeshService {
       throw new Error('MediaPipe Face Mesh nicht initialisiert');
     }
 
-    // Nur senden, wenn FaceMesh bereit ist (Assets geladen)
-    if (this.isFaceMeshReady) {
-      await this.faceMesh.send({ image: imageSource });
-    }
+    await this.faceMesh.send({ image: imageSource });
   }
 
   /**
@@ -100,17 +87,16 @@ class MediaPipeFaceMeshService {
     }
     
     this.isInitialized = false;
-    this.isFaceMeshReady = false; // Reset FaceMesh-Ready-Flag
     this.onResultsCallback = null;
     
     console.log('✓ MediaPipe Face Mesh geschlossen');
   }
 
   /**
-   * Prüfe ob initialisiert und bereit
+   * Prüfe ob initialisiert
    */
   isReady() {
-    return this.isInitialized && this.faceMesh !== null && this.isFaceMeshReady;
+    return this.isInitialized && this.faceMesh !== null;
   }
 }
 

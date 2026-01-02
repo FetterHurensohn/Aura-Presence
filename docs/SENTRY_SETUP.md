@@ -83,14 +83,15 @@ npm run preview
 
 **Backend:**
 ```bash
-curl -X POST http://localhost:3001/api/test-error
+curl http://localhost:3000/test/sentry
 ```
 
 **Frontend:**
-```javascript
-// In Browser-Console
-throw new Error('Sentry Test Error');
-```
+1. Starte Frontend: `npm run dev`
+2. Login ins Dashboard
+3. Klicke **"Test Error Capture"** Button (nur in Development sichtbar)
+4. Alert erscheint: "Test-Error wurde an Sentry gesendet!"
+5. Prüfe Sentry Dashboard nach 30 Sekunden
 
 **Erwartung:** Error erscheint in Sentry Dashboard nach ~30 Sekunden
 
@@ -120,6 +121,15 @@ throw new Error('Sentry Test Error');
 
 - **`frontend/src/main.jsx`** - Integration
   - Import `initSentry()` VOR React-Render
+
+- **`frontend/src/components/ErrorBoundary.jsx`** - Error UI
+  - Sentry Error Capture integriert
+  - Fallback UI für Crashes
+
+- **`frontend/src/components/Dashboard.jsx`** - Test UI
+  - Test-Buttons (nur in Development)
+  - "Test Error Capture" - Caught Error
+  - "Test ErrorBoundary" - Uncaught Error
 
 ### Konfiguration
 
@@ -214,15 +224,17 @@ THEN send Slack notification
 
 **Backend:**
 ```bash
-# Test-Endpoint erstellen (nur Development!)
-curl -X POST http://localhost:3001/api/test-error \
-  -H "Content-Type: application/json" \
-  -d '{"test": true}'
+# Test-Route (nur Development)
+curl http://localhost:3000/test/sentry
+# Erwartung: 500 Error + Event in Sentry
 ```
 
 **Frontend:**
 ```javascript
-// In Browser-Console
+// Option 1: Test-Button im Dashboard (Development)
+// Login → Dashboard → "Test Error Capture" Button
+
+// Option 2: Browser-Console
 import { captureError } from './services/sentryService';
 captureError(new Error('Test Error'), {
   tags: { test: true },

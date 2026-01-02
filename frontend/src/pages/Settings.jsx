@@ -3,15 +3,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { getConsent, saveGranularConsent, revokeConsent } from '../services/consentService';
-import { exportUserData, deleteAccount } from '../services/gdprService';
-import { showSuccess, showInfo, showError } from '../services/toastService';
+import { showSuccess, showInfo } from '../services/toastService';
 import './Settings.css';
 
 function Settings({ user, onLogout }) {
-  const navigate = useNavigate();
-  
   const [consent, setConsent] = useState({
     analytics: false,
     camera: false,
@@ -19,10 +16,6 @@ function Settings({ user, onLogout }) {
   });
   
   const [showConfirmRevoke, setShowConfirmRevoke] = useState(false);
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const [deletePassword, setDeletePassword] = useState('');
-  const [isExporting, setIsExporting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     // Lade aktuellen Consent-Status
@@ -52,41 +45,6 @@ function Settings({ user, onLogout }) {
     setTimeout(() => {
       window.location.reload();
     }, 2000);
-  };
-
-  const handleExportData = async () => {
-    setIsExporting(true);
-    try {
-      await exportUserData();
-    } catch (error) {
-      console.error('Export error:', error);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const handleDeleteAccount = async () => {
-    if (!deletePassword.trim()) {
-      showError('Bitte gib dein Passwort ein');
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      await deleteAccount(deletePassword);
-      
-      // Nach erfolgreicher Löschung: Logout und Redirect
-      setTimeout(() => {
-        onLogout();
-        navigate('/');
-      }, 2000);
-    } catch (error) {
-      console.error('Delete error:', error);
-    } finally {
-      setIsDeleting(false);
-      setShowConfirmDelete(false);
-      setDeletePassword('');
-    }
   };
 
   return (
@@ -204,79 +162,6 @@ function Settings({ user, onLogout }) {
               </div>
             </div>
           )}
-        </section>
-
-        {/* GDPR - Data Export & Account Deletion */}
-        <section className="settings-section">
-          <h2>Deine Daten (DSGVO)</h2>
-          
-          <div className="gdpr-section">
-            <div className="gdpr-option">
-              <h3>📥 Daten exportieren</h3>
-              <p>
-                Lade alle deine gespeicherten Daten als JSON-Datei herunter.
-                Enthält: Profildaten, Analyse-Sessions und Subscription-Info.
-              </p>
-              <button 
-                className="btn btn-primary" 
-                onClick={handleExportData}
-                disabled={isExporting}
-              >
-                {isExporting ? 'Exportiere...' : 'Daten herunterladen'}
-              </button>
-            </div>
-
-            <div className="gdpr-option danger-zone">
-              <h3>🗑️ Account löschen</h3>
-              <p>
-                <strong>Vorsicht:</strong> Dein Account wird zur Löschung markiert und nach 30 Tagen 
-                permanent gelöscht. Du kannst die Löschung innerhalb dieser Zeit abbrechen.
-              </p>
-              <button 
-                className="btn btn-danger" 
-                onClick={() => setShowConfirmDelete(true)}
-              >
-                Account löschen
-              </button>
-            </div>
-
-            {showConfirmDelete && (
-              <div className="confirm-dialog danger">
-                <h4>⚠️ Account wirklich löschen?</h4>
-                <p>
-                  Diese Aktion kann nicht rückgängig gemacht werden. 
-                  Gib dein Passwort ein um fortzufahren:
-                </p>
-                <input 
-                  type="password"
-                  placeholder="Dein Passwort"
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                  className="form-input"
-                  disabled={isDeleting}
-                />
-                <div className="confirm-actions">
-                  <button 
-                    className="btn btn-danger" 
-                    onClick={handleDeleteAccount}
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? 'Lösche...' : 'Ja, Account löschen'}
-                  </button>
-                  <button 
-                    className="btn btn-secondary" 
-                    onClick={() => {
-                      setShowConfirmDelete(false);
-                      setDeletePassword('');
-                    }}
-                    disabled={isDeleting}
-                  >
-                    Abbrechen
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         </section>
 
         {/* Logout */}
