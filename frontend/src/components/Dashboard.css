@@ -407,7 +407,7 @@
   color: #000000;
 }
 
-/* Mitte: Großer Button - ZUR HÄLFTE ÜBER MENUBAR */
+/* Mitte: Großer Button - MITTE AUF HÖHE DER STRICHE */
 .menubar-center-btn {
   background: #330B91;
   border: none;
@@ -421,7 +421,8 @@
   box-shadow: 0 4px 12px rgba(51, 11, 145, 0.3);
   transition: all 0.2s;
   padding: 0;
-  margin-bottom: -32px;
+  position: relative;
+  top: -32px;
 }
 
 .menubar-center-btn svg {
