@@ -15,7 +15,6 @@ import Settings from './pages/Settings';
 import Datenschutz from './pages/Datenschutz';
 import AGB from './pages/AGB';
 import Impressum from './pages/Impressum';
-import Footer from './components/Footer';
 import { getCurrentUser } from './services/authService';
 import './App.css';
 
@@ -101,7 +100,6 @@ function App() {
               element={<Navigate to={user ? "/dashboard" : "/login"} />} 
             />
           </Routes>
-          <Footer />
         </div>
       </Router>
       </ConsentManager>
