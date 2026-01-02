@@ -228,6 +228,7 @@ function Dashboard({ user, onLogout }) {
 
         {/* Rechts: Linie ÜBER Icons */}
         <div className="menubar-right">
+          <div className="menubar-line"></div>
           <div className="menubar-icons">
             <button className="menubar-icon" onClick={() => navigate('/insights')}>
               <svg viewBox="0 0 24 24" fill="currentColor">
@@ -240,7 +241,6 @@ function Dashboard({ user, onLogout }) {
               </svg>
             </button>
           </div>
-          <div className="menubar-line"></div>
         </div>
       </nav>
     </div>

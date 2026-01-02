@@ -367,10 +367,10 @@
   gap: 0.75rem;
 }
 
-/* Linie (Gradient) - GRENZE DER MENUBAR */
+/* Linie (Gradient) - GRENZE DER MENUBAR - DICKER */
 .menubar-line {
   width: 120px;
-  height: 1px;
+  height: 2px;
   background: linear-gradient(90deg, 
     rgba(75, 85, 99, 0) 0%, 
     rgba(75, 85, 99, 1) 10%, 
@@ -379,7 +379,7 @@
   );
 }
 
-/* Icons nebeneinander - GRÖßER */
+/* Icons nebeneinander - ETWAS KLEINER */
 .menubar-icons {
   display: flex;
   flex-direction: row;
@@ -399,15 +399,15 @@
 }
 
 .menubar-icon svg {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
 }
 
 .menubar-icon:hover {
   color: #000000;
 }
 
-/* Mitte: Großer Button - RAGT ÜBER MENUBAR HINAUS */
+/* Mitte: Großer Button - ZUR HÄLFTE ÜBER MENUBAR */
 .menubar-center-btn {
   background: #330B91;
   border: none;
@@ -421,7 +421,7 @@
   box-shadow: 0 4px 12px rgba(51, 11, 145, 0.3);
   transition: all 0.2s;
   padding: 0;
-  margin-bottom: -10px;
+  margin-bottom: -32px;
 }
 
 .menubar-center-btn svg {
