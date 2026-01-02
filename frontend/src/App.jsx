@@ -107,7 +107,7 @@ function App() {
             />
             <Route 
               path="/analysis-result" 
-              element={user ? <AnalysisResult /> : <Navigate to="/login" />} 
+              element={user ? <AnalysisResult user={user} /> : <Navigate to="/login" />} 
             />
             
             {/* Sessions & History */}
