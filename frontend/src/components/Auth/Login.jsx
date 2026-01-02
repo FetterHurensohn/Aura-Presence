@@ -44,16 +44,30 @@ function Login({ onLogin }) {
       <div className="auth-card">
         {/* Logo */}
         <div className="auth-logo">
-          <svg width="80" height="80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M50 10 C30 20, 20 30, 20 50 C20 70, 30 80, 50 90 C70 80, 80 70, 80 50 C80 30, 70 20, 50 10 Z" 
-                  fill="#6366f1" opacity="0.2"/>
-            <path d="M50 20 L55 35 L70 40 L60 50 L65 65 L50 60 L35 65 L40 50 L30 40 L45 35 Z" 
-                  fill="#6366f1" opacity="0.6"/>
-            <circle cx="50" cy="50" r="8" fill="#6366f1"/>
-            <path d="M 50 50 Q 35 35, 25 50" stroke="#6366f1" strokeWidth="2" fill="none" opacity="0.8"/>
-            <path d="M 50 50 Q 65 35, 75 50" stroke="#6366f1" strokeWidth="2" fill="none" opacity="0.8"/>
-            <path d="M 50 50 Q 35 65, 25 50" stroke="#6366f1" strokeWidth="2" fill="none" opacity="0.4"/>
-            <path d="M 50 50 Q 65 65, 75 50" stroke="#6366f1" strokeWidth="2" fill="none" opacity="0.4"/>
+          <svg width="96" height="96" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Spiral Pattern - Black like in mockup */}
+            <g transform="translate(60,60)">
+              {/* Outer spiral arms */}
+              <path d="M 0,-40 Q 28,-28 40,0" stroke="#000000" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
+              <path d="M 40,0 Q 28,28 0,40" stroke="#000000" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
+              <path d="M 0,40 Q -28,28 -40,0" stroke="#000000" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
+              <path d="M -40,0 Q -28,-28 0,-40" stroke="#000000" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
+              
+              {/* Middle spiral arms */}
+              <path d="M 0,-28 Q 20,-20 28,0" stroke="#000000" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+              <path d="M 28,0 Q 20,20 0,28" stroke="#000000" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+              <path d="M 0,28 Q -20,20 -28,0" stroke="#000000" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+              <path d="M -28,0 Q -20,-20 0,-28" stroke="#000000" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
+              
+              {/* Inner spiral arms */}
+              <path d="M 0,-16 Q 11,-11 16,0" stroke="#000000" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+              <path d="M 16,0 Q 11,11 0,16" stroke="#000000" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+              <path d="M 0,16 Q -11,11 -16,0" stroke="#000000" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+              <path d="M -16,0 Q -11,-11 0,-16" stroke="#000000" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+              
+              {/* Center circle */}
+              <circle cx="0" cy="0" r="6" fill="#000000"/>
+            </g>
           </svg>
         </div>
         
@@ -135,7 +149,11 @@ function Login({ onLogin }) {
 
         {/* Privacy Notice */}
         <div className="auth-privacy">
-          <strong>Datenschutzerklärung</strong>
+          <strong>
+            <Link to="/datenschutz" className="auth-privacy-link">
+              Datenschutzerklärung
+            </Link>
+          </strong>
           <p>Video wird nicht gespeichert. Die Analyse erfolgt lokal; es werden nur aggregierte Metadaten verarbeitet.</p>
         </div>
       </div>
