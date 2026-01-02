@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BottomNav from '../components/BottomNav';
 
 function Account({ user, onLogout }) {
   const navigate = useNavigate();
@@ -91,7 +92,8 @@ function Account({ user, onLogout }) {
         </div>
       </div>
       
-      <div style={{ height: '72px' }}></div>
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }

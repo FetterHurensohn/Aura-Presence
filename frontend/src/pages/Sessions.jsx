@@ -4,6 +4,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import BottomNav from '../components/BottomNav';
 import './Sessions.css';
 
 function Sessions() {
@@ -121,8 +122,8 @@ function Sessions() {
         </section>
       </div>
 
-      {/* Bottom Nav Placeholder */}
-      <div style={{ height: '72px' }}></div>
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }

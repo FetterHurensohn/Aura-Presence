@@ -6,8 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getSubscriptionStatus } from '../services/apiService';
-import BottomNav from './BottomNav';
-import './Dashboard.css';
+import './DashboardNew.css';
 
 function Dashboard({ user, onLogout }) {
   const [subscription, setSubscription] = useState(null);
@@ -48,7 +47,7 @@ function Dashboard({ user, onLogout }) {
   };
 
   const startSession = () => {
-    navigate('/session-prepare');
+    navigate('/analyze');
   };
 
   return (
@@ -140,7 +139,7 @@ function Dashboard({ user, onLogout }) {
                   <span className="metric-value">{lastSession.eyeContact}%</span>
                 </div>
               </div>
-              <Link to="/sessions" className="session-details-link">
+              <Link to="/analyze" className="session-details-link">
                 Details ansehen →
               </Link>
             </div>
@@ -151,16 +150,11 @@ function Dashboard({ user, onLogout }) {
         <section className="recent-sessions">
           <div className="section-header">
             <h3 className="section-title">Verlauf</h3>
-            <Link to="/sessions" className="section-link">Alle →</Link>
+            <Link to="/analyze" className="section-link">Alle →</Link>
           </div>
           <div className="sessions-list">
             {recentSessions.map((session) => (
-              <div 
-                key={session.id} 
-                className="session-item"
-                onClick={() => navigate(`/session/${session.id}`, { state: { session } })}
-                style={{ cursor: 'pointer' }}
-              >
+              <div key={session.id} className="session-item">
                 <div className="session-item-date">
                   {new Date(session.date).toLocaleDateString('de-DE', { day: '2-digit', month: 'short' })}
                 </div>
@@ -188,7 +182,7 @@ function Dashboard({ user, onLogout }) {
               </div>
               <p className="trend-text">Deine Confidence verbessert sich stetig!</p>
             </div>
-            <Link to="/insights" className="teaser-link">
+            <Link to="/analyze" className="teaser-link">
               Zu Insights →
             </Link>
           </div>
@@ -196,7 +190,24 @@ function Dashboard({ user, onLogout }) {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNav />
+      <nav className="bottom-nav">
+        <Link to="/dashboard" className="nav-item active">
+          <div className="nav-icon">🏠</div>
+          <div className="nav-label">Dashboard</div>
+        </Link>
+        <Link to="/analyze" className="nav-item">
+          <div className="nav-icon">📊</div>
+          <div className="nav-label">Sessions</div>
+        </Link>
+        <Link to="/analyze" className="nav-item">
+          <div className="nav-icon">💡</div>
+          <div className="nav-label">Insights</div>
+        </Link>
+        <Link to="/settings" className="nav-item">
+          <div className="nav-icon">⚙️</div>
+          <div className="nav-label">Account</div>
+        </Link>
+      </nav>
     </div>
   );
 }

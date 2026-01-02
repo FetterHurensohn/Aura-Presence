@@ -1,0 +1,73 @@
+/* Bottom Navigation - Shared Component */
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #151b2e;
+  border-top: 1px solid rgba(99, 102, 241, 0.1);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 0.5rem 0;
+  z-index: 100;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  text-decoration: none;
+  color: #94a3b8;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.nav-item.active {
+  color: #6366f1;
+}
+
+.nav-item:hover {
+  color: #cbd5e1;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 3px;
+  background: #6366f1;
+  border-radius: 0 0 3px 3px;
+}
+
+.nav-item.active .nav-icon {
+  transform: scale(1.1);
+}
+
+.nav-icon {
+  font-size: 1.5rem;
+  transition: transform 0.2s;
+}
+
+.nav-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+  .nav-icon {
+    font-size: 1.75rem;
+  }
+  
+  .nav-label {
+    font-size: 0.875rem;
+  }
+}
+

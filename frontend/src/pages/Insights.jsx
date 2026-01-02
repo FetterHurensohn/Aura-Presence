@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import BottomNav from '../components/BottomNav';
 
 function Insights() {
   const navigate = useNavigate();
@@ -49,7 +50,8 @@ function Insights() {
         </div>
       </div>
       
-      <div style={{ height: '72px' }}></div>
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }
