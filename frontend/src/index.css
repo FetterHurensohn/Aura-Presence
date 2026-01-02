@@ -6,36 +6,27 @@
 
 @layer base {
   * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+    @apply box-border m-0 p-0;
   }
 
   body {
-    font-family: 'Inter', sans-serif;
+    @apply font-sans antialiased;
     background-color: #0a0f1e;
     color: white;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
 
   #root {
-    min-height: 100vh;
+    @apply min-h-screen;
   }
 }
 
 @layer components {
   /* Custom Component Utilities */
   .card-elevated {
-    background-color: #151b2e;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    @apply bg-surface-800 rounded-card shadow-md;
   }
 
   .btn-base {
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.2s ease;
+    @apply px-4 py-2 rounded-button font-semibold transition-all duration-200;
   }
 }
