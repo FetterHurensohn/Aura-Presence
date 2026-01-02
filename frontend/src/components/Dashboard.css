@@ -344,12 +344,10 @@
   right: 0;
   width: 100%;
   background: #FFFFFF;
-  border-top: 1px solid #E0E0E0;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  padding: 0.75rem 1.5rem 1.25rem 1.5rem;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  padding: 0 1.5rem 1.25rem 1.5rem;
   z-index: 100;
 }
 
@@ -361,7 +359,7 @@
   gap: 0.75rem;
 }
 
-/* Rechts: Icons + Linie */
+/* Rechts: Linie ÜBER Icons */
 .menubar-right {
   display: flex;
   flex-direction: column;
@@ -369,9 +367,9 @@
   gap: 0.75rem;
 }
 
-/* Linie (Gradient) */
+/* Linie (Gradient) - GRENZE DER MENUBAR */
 .menubar-line {
-  width: 100px;
+  width: 120px;
   height: 1px;
   background: linear-gradient(90deg, 
     rgba(75, 85, 99, 0) 0%, 
@@ -381,11 +379,11 @@
   );
 }
 
-/* Icons nebeneinander */
+/* Icons nebeneinander - GRÖßER */
 .menubar-icons {
   display: flex;
   flex-direction: row;
-  gap: 2rem;
+  gap: 2.5rem;
 }
 
 .menubar-icon {
@@ -401,20 +399,20 @@
 }
 
 .menubar-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
 }
 
 .menubar-icon:hover {
   color: #000000;
 }
 
-/* Mitte: Großer Button */
+/* Mitte: Großer Button - RAGT ÜBER MENUBAR HINAUS */
 .menubar-center-btn {
   background: #330B91;
   border: none;
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -423,11 +421,12 @@
   box-shadow: 0 4px 12px rgba(51, 11, 145, 0.3);
   transition: all 0.2s;
   padding: 0;
+  margin-bottom: -10px;
 }
 
 .menubar-center-btn svg {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
 }
 
 .menubar-center-btn:hover {
