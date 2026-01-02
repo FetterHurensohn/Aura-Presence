@@ -42,7 +42,14 @@
   font-size: 26px;
   font-weight: 600;
   color: #000000;
-  margin: 0 0 2rem 0;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid transparent;
+  background: linear-gradient(#FFFFFF, #FFFFFF) padding-box,
+              linear-gradient(90deg, rgba(75, 85, 99, 0) 0%, rgba(75, 85, 99, 1) 10%, rgba(75, 85, 99, 1) 90%, rgba(75, 85, 99, 0) 100%) border-box;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, rgba(75, 85, 99, 0) 0%, rgba(75, 85, 99, 1) 10%, rgba(75, 85, 99, 1) 90%, rgba(75, 85, 99, 0) 100%) 1;
+  margin-bottom: 2rem;
 }
 
 /* Score Circle Container */
@@ -54,10 +61,10 @@
 }
 
 .score-label {
-  font-family: 'Roboto', sans-serif;
-  font-size: 16px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 20px;
   font-weight: 400;
-  color: #4B5563;
+  color: #000000;
   margin-bottom: 1rem;
 }
 
