@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+Bitte verwende nur Farben und Schriften, die ich dir gegeben habe. Verwende niemals andere Farben oder Schriften:
+
+Farben: #F7F8FA, #FFFFFF, #BDBDBD, #E0E0E0, #000000, #152235, #4B5563, #330B91, #0E7DB8, #007A5A, #E08A00, #C23B3B
+Gradient: linear-gradient(90deg, rgba(75, 85, 99, 0) 0%, rgba(75, 85, 99, 1) 10%, rgba(75, 85, 99, 1) 90%, rgba(75, 85, 99, 0) 100%);
+background: linear-gradient(90deg, rgba(14, 124, 184, 1) 0%, rgba(51, 11, 145, 1) 100%);
+
+
+
+Schriftarten:
+Überschriften: Montserrat 30 Bold, Montserrat 26 SemiBold, Montserrat 20 Regular
+
+Primär: Roboto 15 Regular, Roboto 15 Regular Bold, Roboto 15 Bold Underlined, Roboto 12 Regular, Roboto 12 Regular Bold, Roboto 12 Bold Underlined, Sarala 18 Bold
+
+Formen:
+Jeder Strich hat den Gradient "linear-gradient(90deg, rgba(75, 85, 99, 0) 0%, rgba(75, 85, 99, 1) 10%, rgba(75, 85, 99, 1) 90%, rgba(75, 85, 99, 0) 100%);"
