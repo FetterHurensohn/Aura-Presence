@@ -22,6 +22,7 @@ import AnalysisResult from './pages/AnalysisResult';
 import Sessions from './pages/Sessions';
 import SessionDetail from './pages/SessionDetail';
 import Insights from './pages/Insights';
+import Courses from './pages/Courses';
 import Account from './pages/Account';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Methodology from './pages/Methodology';
@@ -122,7 +123,13 @@ function App() {
             {/* Insights */}
             <Route 
               path="/insights" 
-              element={user ? <Insights /> : <Navigate to="/login" />} 
+              element={user ? <Insights user={user} /> : <Navigate to="/login" />} 
+            />
+            
+            {/* Courses (Kurse) */}
+            <Route 
+              path="/courses" 
+              element={user ? <Courses user={user} /> : <Navigate to="/login" />} 
             />
             
             {/* Account & Settings */}
