@@ -94,36 +94,34 @@ function Dashboard({ user, onLogout }) {
           <h2 className="section-title">Sessions</h2>
           <div className="session-card">
             <div className="session-header">
-              <div>
+              <div className="session-info">
                 <h3 className="session-title">Letzte Sitzung</h3>
                 <p className="session-date">{lastSession.date}</p>
                 <p className="session-type">{lastSession.type}</p>
               </div>
               <div className="session-thumbnail"></div>
             </div>
-            <div className="session-metrics">
-              <div className="metric-column">
-                <div className="metric-row">
+            <div className="session-body">
+              <div className="session-metrics-grid">
+                <div className="metric-item">
                   <span className="metric-label">Augenkontakt:</span>
                   <span className="metric-value">{lastSession.metrics.augenkontakt}</span>
                 </div>
-                <div className="metric-row">
-                  <span className="metric-label">Gestik:</span>
-                  <span className="metric-value">{lastSession.metrics.gestik}</span>
-                </div>
-                <div className="metric-row">
-                  <span className="metric-label">Mimik:</span>
-                  <span className="metric-value">{lastSession.metrics.mimik}</span>
-                </div>
-              </div>
-              <div className="metric-column">
-                <div className="metric-row">
+                <div className="metric-item">
                   <span className="metric-label">Inhalt:</span>
                   <span className="metric-value">{lastSession.metrics.inhalt}</span>
                 </div>
-                <div className="metric-row">
+                <div className="metric-item">
+                  <span className="metric-label">Gestik:</span>
+                  <span className="metric-value">{lastSession.metrics.gestik}</span>
+                </div>
+                <div className="metric-item">
                   <span className="metric-label">Stimme:</span>
                   <span className="metric-value">{lastSession.metrics.stimme}</span>
+                </div>
+                <div className="metric-item">
+                  <span className="metric-label">Mimik:</span>
+                  <span className="metric-value">{lastSession.metrics.mimik}</span>
                 </div>
               </div>
             </div>
