@@ -247,6 +247,94 @@
   color: #FFFFFF;
 }
 
+/* Edit Modal */
+.edit-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 1rem;
+}
+
+.edit-modal {
+  background: #FFFFFF;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.edit-modal-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #000000;
+  margin: 0 0 1.5rem 0;
+}
+
+.edit-modal-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #F7F8FA;
+  border: 1px solid #E0E0E0;
+  border-radius: 8px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 15px;
+  color: #000000;
+  box-sizing: border-box;
+  margin-bottom: 1.5rem;
+}
+
+.edit-modal-input:focus {
+  outline: none;
+  border-color: #330B91;
+}
+
+.edit-modal-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.edit-modal-btn {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.edit-modal-btn.cancel {
+  background: #FFFFFF;
+  color: #000000;
+  border: 2px solid #E0E0E0;
+}
+
+.edit-modal-btn.cancel:hover {
+  background: #F7F8FA;
+}
+
+.edit-modal-btn.save {
+  background: #330B91;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(51, 11, 145, 0.3);
+}
+
+.edit-modal-btn.save:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .account-main-title {
@@ -266,6 +354,14 @@
   .privacy-link,
   .logout-btn {
     font-size: 14px;
+  }
+
+  .edit-modal {
+    padding: 1.5rem;
+  }
+
+  .edit-modal-title {
+    font-size: 18px;
   }
 }
 

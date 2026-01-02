@@ -10,6 +10,11 @@ import './Account.css';
 function Account({ user, onLogout }) {
   const navigate = useNavigate();
   const [language, setLanguage] = useState('Deutsch');
+  
+  // Edit Modal States
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editField, setEditField] = useState('');
+  const [editValue, setEditValue] = useState('');
 
   // Get user initial
   const getUserInitial = () => {
@@ -18,9 +23,21 @@ function Account({ user, onLogout }) {
     return 'J';
   };
 
-  const handleEdit = (field) => {
-    console.log(`Edit ${field}`);
-    // TODO: Implement edit functionality
+  const handleEdit = (field, currentValue) => {
+    setEditField(field);
+    setEditValue(currentValue);
+    setEditModalOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    console.log(`Saving ${editField}:`, editValue);
+    // TODO: Implement actual save functionality
+    setEditModalOpen(false);
+  };
+
+  const handleCancelEdit = () => {
+    setEditModalOpen(false);
+    setEditValue('');
   };
 
   const handleUpgrade = () => {
@@ -53,10 +70,11 @@ function Account({ user, onLogout }) {
             <div className="field-label-bold">Vor- und Nachname:</div>
             <div className="field-row">
               <span className="field-value">{user?.name || 'Jacques Dong'}</span>
-              <button className="edit-icon-btn" onClick={() => handleEdit('name')}>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3.548,20.938h16.9a.5.5,0,0,0,0-1H3.548a.5.5,0,0,0,0,1Z"/>
-                  <path d="M9.71,17.18a2.587,2.587,0,0,0,1.12-.65l9.54-9.54a1.75,1.75,0,0,0,0-2.47l-.94-.93a1.788,1.788,0,0,0-2.47,0L7.42,13.12a2.473,2.473,0,0,0-.64,1.12L6.04,17a.737.737,0,0,0,.19.72.767.767,0,0,0,.53.22Zm.41-1.36a1.468,1.468,0,0,1-.67.39l-.97.26-1.18.31.3-1.18.26-.97a1.521,1.521,0,0,1,.39-.67l.38-.37,1.91,1.91Zm1.09-1.08L9.3,12.83l6.73-6.73,1.91,1.91Zm8.45-8.45L18.36,7.58,16.45,5.67l1.29-1.29a.794.794,0,0,1,1.06,0l.94.94a.75.75,0,0,1,0,1.06Z"/>
+              <button className="edit-icon-btn" onClick={() => handleEdit('name', user?.name || 'Jacques Dong')}>
+                <svg viewBox="0 0 32 32" fill="currentColor">
+                  <path d="M25.384,11.987a.993.993,0,0,1-.707-.293L20.434,7.452a1,1,0,0,1,0-1.414l2.122-2.121a3.07,3.07,0,0,1,4.242,0l1.414,1.414a3,3,0,0,1,0,4.242l-2.122,2.121A.993.993,0,0,1,25.384,11.987ZM22.555,6.745l2.829,2.828L26.8,8.159a1,1,0,0,0,0-1.414L25.384,5.331a1.023,1.023,0,0,0-1.414,0Z"/>
+                  <path d="M11.9,22.221a2,2,0,0,1-1.933-2.487l.875-3.5a3.02,3.02,0,0,1,.788-1.393l8.8-8.8a1,1,0,0,1,1.414,0l4.243,4.242a1,1,0,0,1,0,1.414l-8.8,8.8a3,3,0,0,1-1.393.79h0l-3.5.875A2.027,2.027,0,0,1,11.9,22.221Zm3.752-1.907h0ZM21.141,8.159l-8.094,8.093a1,1,0,0,0-.262.465l-.876,3.5,3.5-.876a1,1,0,0,0,.464-.263l8.094-8.094Z"/>
+                  <path d="M22,29H8a5.006,5.006,0,0,1-5-5V10A5.006,5.006,0,0,1,8,5h9.64a1,1,0,0,1,0,2H8a3,3,0,0,0-3,3V24a3,3,0,0,0,3,3H22a3,3,0,0,0,3-3V14.61a1,1,0,0,1,2,0V24A5.006,5.006,0,0,1,22,29Z"/>
                 </svg>
               </button>
             </div>
@@ -67,26 +85,21 @@ function Account({ user, onLogout }) {
             <div className="field-label-bold">Unternehmen:</div>
             <div className="field-row">
               <span className="field-value">Aura Presence</span>
-              <button className="edit-icon-btn" onClick={() => handleEdit('company')}>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3.548,20.938h16.9a.5.5,0,0,0,0-1H3.548a.5.5,0,0,0,0,1Z"/>
-                  <path d="M9.71,17.18a2.587,2.587,0,0,0,1.12-.65l9.54-9.54a1.75,1.75,0,0,0,0-2.47l-.94-.93a1.788,1.788,0,0,0-2.47,0L7.42,13.12a2.473,2.473,0,0,0-.64,1.12L6.04,17a.737.737,0,0,0,.19.72.767.767,0,0,0,.53.22Zm.41-1.36a1.468,1.468,0,0,1-.67.39l-.97.26-1.18.31.3-1.18.26-.97a1.521,1.521,0,0,1,.39-.67l.38-.37,1.91,1.91Zm1.09-1.08L9.3,12.83l6.73-6.73,1.91,1.91Zm8.45-8.45L18.36,7.58,16.45,5.67l1.29-1.29a.794.794,0,0,1,1.06,0l.94.94a.75.75,0,0,1,0,1.06Z"/>
+              <button className="edit-icon-btn" onClick={() => handleEdit('company', 'Aura Presence')}>
+                <svg viewBox="0 0 32 32" fill="currentColor">
+                  <path d="M25.384,11.987a.993.993,0,0,1-.707-.293L20.434,7.452a1,1,0,0,1,0-1.414l2.122-2.121a3.07,3.07,0,0,1,4.242,0l1.414,1.414a3,3,0,0,1,0,4.242l-2.122,2.121A.993.993,0,0,1,25.384,11.987ZM22.555,6.745l2.829,2.828L26.8,8.159a1,1,0,0,0,0-1.414L25.384,5.331a1.023,1.023,0,0,0-1.414,0Z"/>
+                  <path d="M11.9,22.221a2,2,0,0,1-1.933-2.487l.875-3.5a3.02,3.02,0,0,1,.788-1.393l8.8-8.8a1,1,0,0,1,1.414,0l4.243,4.242a1,1,0,0,1,0,1.414l-8.8,8.8a3,3,0,0,1-1.393.79h0l-3.5.875A2.027,2.027,0,0,1,11.9,22.221Zm3.752-1.907h0ZM21.141,8.159l-8.094,8.093a1,1,0,0,0-.262.465l-.876,3.5,3.5-.876a1,1,0,0,0,.464-.263l8.094-8.094Z"/>
+                  <path d="M22,29H8a5.006,5.006,0,0,1-5-5V10A5.006,5.006,0,0,1,8,5h9.64a1,1,0,0,1,0,2H8a3,3,0,0,0-3,3V24a3,3,0,0,0,3,3H22a3,3,0,0,0,3-3V14.61a1,1,0,0,1,2,0V24A5.006,5.006,0,0,1,22,29Z"/>
                 </svg>
               </button>
             </div>
           </div>
 
-          {/* E-Mail-Adresse */}
+          {/* E-Mail-Adresse - KEIN EDIT-ICON */}
           <div className="profile-field">
             <div className="field-label-bold">E-Mail-Adresse:</div>
             <div className="field-row">
               <span className="field-value">{user?.email || 'jacquesdong9@gmail.com'}</span>
-              <button className="edit-icon-btn" onClick={() => handleEdit('email')}>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3.548,20.938h16.9a.5.5,0,0,0,0-1H3.548a.5.5,0,0,0,0,1Z"/>
-                  <path d="M9.71,17.18a2.587,2.587,0,0,0,1.12-.65l9.54-9.54a1.75,1.75,0,0,0,0-2.47l-.94-.93a1.788,1.788,0,0,0-2.47,0L7.42,13.12a2.473,2.473,0,0,0-.64,1.12L6.04,17a.737.737,0,0,0,.19.72.767.767,0,0,0,.53.22Zm.41-1.36a1.468,1.468,0,0,1-.67.39l-.97.26-1.18.31.3-1.18.26-.97a1.521,1.521,0,0,1,.39-.67l.38-.37,1.91,1.91Zm1.09-1.08L9.3,12.83l6.73-6.73,1.91,1.91Zm8.45-8.45L18.36,7.58,16.45,5.67l1.29-1.29a.794.794,0,0,1,1.06,0l.94.94a.75.75,0,0,1,0,1.06Z"/>
-                </svg>
-              </button>
             </div>
           </div>
 
@@ -95,10 +108,11 @@ function Account({ user, onLogout }) {
             <div className="field-label-bold">Passwort:</div>
             <div className="field-row">
               <span className="field-value">***************</span>
-              <button className="edit-icon-btn" onClick={() => handleEdit('password')}>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3.548,20.938h16.9a.5.5,0,0,0,0-1H3.548a.5.5,0,0,0,0,1Z"/>
-                  <path d="M9.71,17.18a2.587,2.587,0,0,0,1.12-.65l9.54-9.54a1.75,1.75,0,0,0,0-2.47l-.94-.93a1.788,1.788,0,0,0-2.47,0L7.42,13.12a2.473,2.473,0,0,0-.64,1.12L6.04,17a.737.737,0,0,0,.19.72.767.767,0,0,0,.53.22Zm.41-1.36a1.468,1.468,0,0,1-.67.39l-.97.26-1.18.31.3-1.18.26-.97a1.521,1.521,0,0,1,.39-.67l.38-.37,1.91,1.91Zm1.09-1.08L9.3,12.83l6.73-6.73,1.91,1.91Zm8.45-8.45L18.36,7.58,16.45,5.67l1.29-1.29a.794.794,0,0,1,1.06,0l.94.94a.75.75,0,0,1,0,1.06Z"/>
+              <button className="edit-icon-btn" onClick={() => handleEdit('password', '***************')}>
+                <svg viewBox="0 0 32 32" fill="currentColor">
+                  <path d="M25.384,11.987a.993.993,0,0,1-.707-.293L20.434,7.452a1,1,0,0,1,0-1.414l2.122-2.121a3.07,3.07,0,0,1,4.242,0l1.414,1.414a3,3,0,0,1,0,4.242l-2.122,2.121A.993.993,0,0,1,25.384,11.987ZM22.555,6.745l2.829,2.828L26.8,8.159a1,1,0,0,0,0-1.414L25.384,5.331a1.023,1.023,0,0,0-1.414,0Z"/>
+                  <path d="M11.9,22.221a2,2,0,0,1-1.933-2.487l.875-3.5a3.02,3.02,0,0,1,.788-1.393l8.8-8.8a1,1,0,0,1,1.414,0l4.243,4.242a1,1,0,0,1,0,1.414l-8.8,8.8a3,3,0,0,1-1.393.79h0l-3.5.875A2.027,2.027,0,0,1,11.9,22.221Zm3.752-1.907h0ZM21.141,8.159l-8.094,8.093a1,1,0,0,0-.262.465l-.876,3.5,3.5-.876a1,1,0,0,0,.464-.263l8.094-8.094Z"/>
+                  <path d="M22,29H8a5.006,5.006,0,0,1-5-5V10A5.006,5.006,0,0,1,8,5h9.64a1,1,0,0,1,0,2H8a3,3,0,0,0-3,3V24a3,3,0,0,0,3,3H22a3,3,0,0,0,3-3V14.61a1,1,0,0,1,2,0V24A5.006,5.006,0,0,1,22,29Z"/>
                 </svg>
               </button>
             </div>
@@ -156,6 +170,40 @@ function Account({ user, onLogout }) {
         {/* Spacer für Bottom Nav */}
         <div style={{ height: '100px' }}></div>
       </div>
+
+      {/* Edit Modal */}
+      {editModalOpen && (
+        <div className="edit-modal-overlay" onClick={handleCancelEdit}>
+          <div className="edit-modal" onClick={(e) => e.stopPropagation()}>
+            <h3 className="edit-modal-title">
+              {editField === 'name' && 'Vor- und Nachname ändern'}
+              {editField === 'company' && 'Unternehmen ändern'}
+              {editField === 'password' && 'Passwort ändern'}
+            </h3>
+            
+            <input
+              type={editField === 'password' ? 'password' : 'text'}
+              className="edit-modal-input"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              placeholder={
+                editField === 'name' ? 'Vor- und Nachname eingeben' :
+                editField === 'company' ? 'Unternehmen eingeben' :
+                'Neues Passwort eingeben'
+              }
+            />
+            
+            <div className="edit-modal-actions">
+              <button className="edit-modal-btn cancel" onClick={handleCancelEdit}>
+                Abbrechen
+              </button>
+              <button className="edit-modal-btn save" onClick={handleSaveEdit}>
+                Speichern
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MENUBAR - GLEICH WIE ÜBERALL */}
       <nav className="menubar-new">
