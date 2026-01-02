@@ -10,7 +10,6 @@ import FeedbackDisplay from './FeedbackDisplay';
 import { sendAnalysis } from '../services/apiService';
 import { showError, showInfo, showWarning } from '../services/toastService';
 import { hasConsent } from '../services/consentService';
-import './AnalysisView.css';
 
 function AnalysisView({ user, onLogout }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
