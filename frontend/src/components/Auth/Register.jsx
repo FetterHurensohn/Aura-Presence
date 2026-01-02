@@ -60,30 +60,9 @@ function Register({ onLogin }) {
       <div className="auth-card">
         {/* Logo */}
         <div className="auth-logo">
-          <svg width="96" height="96" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Spiral Pattern - Black like in mockup */}
-            <g transform="translate(60,60)">
-              {/* Outer spiral arms */}
-              <path d="M 0,-40 Q 28,-28 40,0" stroke="#000000" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
-              <path d="M 40,0 Q 28,28 0,40" stroke="#000000" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
-              <path d="M 0,40 Q -28,28 -40,0" stroke="#000000" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
-              <path d="M -40,0 Q -28,-28 0,-40" stroke="#000000" strokeWidth="4.5" fill="none" strokeLinecap="round"/>
-              
-              {/* Middle spiral arms */}
-              <path d="M 0,-28 Q 20,-20 28,0" stroke="#000000" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-              <path d="M 28,0 Q 20,20 0,28" stroke="#000000" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-              <path d="M 0,28 Q -20,20 -28,0" stroke="#000000" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-              <path d="M -28,0 Q -20,-20 0,-28" stroke="#000000" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-              
-              {/* Inner spiral arms */}
-              <path d="M 0,-16 Q 11,-11 16,0" stroke="#000000" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-              <path d="M 16,0 Q 11,11 0,16" stroke="#000000" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-              <path d="M 0,16 Q -11,11 -16,0" stroke="#000000" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-              <path d="M -16,0 Q -11,-11 0,-16" stroke="#000000" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-              
-              {/* Center circle */}
-              <circle cx="0" cy="0" r="6" fill="#000000"/>
-            </g>
+          <svg width="96" height="96" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fillRule="evenodd" clipRule="evenodd" d="M10 3.25C6.27208 3.25 3.25 6.27208 3.25 10C3.25 13.7279 6.27208 16.75 10 16.75C13.7279 16.75 16.75 13.7279 16.75 10C16.75 6.27208 13.7279 3.25 10 3.25ZM1.75 10C1.75 5.44365 5.44365 1.75 10 1.75C14.5563 1.75 18.25 5.44365 18.25 10C18.25 14.5563 14.5563 18.25 10 18.25C5.44365 18.25 1.75 14.5563 1.75 10Z" fill="#000000"/>
+            <path fillRule="evenodd" clipRule="evenodd" d="M10.0049 5.25012C10.3623 5.2513 10.6733 5.48426 10.7684 5.82534L11.7719 9.31066L15.2572 10.3142C15.5983 10.4093 15.8313 10.7203 15.8324 11.0777C15.8336 11.4351 15.6024 11.7474 15.2622 11.8444L11.777 12.8479L10.7734 16.3332C10.6783 16.6743 10.3673 16.9073 10.0099 16.9084C9.65254 16.9096 9.34022 16.6766 9.24312 16.3355L8.23961 12.8502L4.75429 11.8467C4.41321 11.7516 4.18025 11.4406 4.17907 11.0832C4.17789 10.7258 4.40906 10.4135 4.74935 10.3165L8.23467 9.31296L9.23818 5.82764C9.33329 5.48656 9.64445 5.25293 10.0018 5.25175L10.0049 5.25012ZM9.76416 7.48346L9.14233 9.67743C9.05847 9.97844 8.82841 10.2085 8.5274 10.2923L6.33343 10.9142L8.5274 11.536C8.82841 11.6199 9.05847 11.8499 9.14233 12.1509L9.76416 14.3449L10.386 12.1509C10.4698 11.8499 10.6999 11.6199 11.0009 11.536L13.1949 10.9142L11.0009 10.2923C10.6999 10.2085 10.4698 9.97844 10.386 9.67743L9.76416 7.48346Z" fill="#000000"/>
           </svg>
         </div>
         
