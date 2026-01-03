@@ -51,6 +51,16 @@ apiClient.interceptors.response.use(
       // Strukturierte Error-Messages basierend auf HTTP-Status
       switch (status) {
         case 401:
+          // SKIP token refresh for login/register endpoints
+          const isAuthEndpoint = originalRequest.url?.includes('/auth/login') || 
+                                  originalRequest.url?.includes('/auth/register');
+          
+          if (isAuthEndpoint) {
+            // For login/register, use the actual error message from backend
+            errorMessage = data.error || data.message || 'E-Mail oder Passwort ist falsch';
+            break;
+          }
+          
           // Try to refresh token (if not already retried)
           if (!originalRequest._retry) {
             originalRequest._retry = true;
