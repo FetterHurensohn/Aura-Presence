@@ -451,3 +451,4 @@ Checkout Endpoint benötigt JWT Token.
 
 **Happy Payments! 💳✨**
 
+

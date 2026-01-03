@@ -4,10 +4,7 @@
  */
 
 import React, { useRef, useEffect, useState } from 'react';
-import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
-import { POSE_CONNECTIONS } from '@mediapipe/pose';
-import { FACEMESH_TESSELATION, FACEMESH_RIGHT_EYE, FACEMESH_LEFT_EYE, FACEMESH_LIPS } from '@mediapipe/face_mesh';
-import { HAND_CONNECTIONS } from '@mediapipe/hands';
+// MediaPipe-Utils via CDN global verfügbar (window.drawConnectors, etc.)
 import mediaPipeService from '../services/MediaPipeService';
 import { UnifiedFeatureExtractor } from '../services/FeatureExtractor';
 import { showError, showWarning } from '../services/toastService';
@@ -138,12 +135,12 @@ function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
 
     // 1. Pose-Landmarks zeichnen (falls erkannt)
     if (unifiedResults.pose?.poseLandmarks) {
-      drawConnectors(ctx, unifiedResults.pose.poseLandmarks, POSE_CONNECTIONS, {
+      window.drawConnectors(ctx, unifiedResults.pose.poseLandmarks, window.POSE_CONNECTIONS, {
         color: '#6c5ce7',
         lineWidth: 2
       });
 
-      drawLandmarks(ctx, unifiedResults.pose.poseLandmarks, {
+      window.drawLandmarks(ctx, unifiedResults.pose.poseLandmarks, {
         color: '#00d2d3',
         lineWidth: 1,
         radius: 3
@@ -154,23 +151,23 @@ function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
     if (unifiedResults.faceMesh?.multiFaceLandmarks) {
       unifiedResults.faceMesh.multiFaceLandmarks.forEach(landmarks => {
         // Face Tesselation (dezent)
-        drawConnectors(ctx, landmarks, FACEMESH_TESSELATION, {
+        window.drawConnectors(ctx, landmarks, window.FACEMESH_TESSELATION, {
           color: '#C0C0C070',
           lineWidth: 1
         });
 
         // Eyes (hervorgehoben)
-        drawConnectors(ctx, landmarks, FACEMESH_RIGHT_EYE, {
+        window.drawConnectors(ctx, landmarks, window.FACEMESH_RIGHT_EYE, {
           color: '#FF3030',
           lineWidth: 1
         });
-        drawConnectors(ctx, landmarks, FACEMESH_LEFT_EYE, {
+        window.drawConnectors(ctx, landmarks, window.FACEMESH_LEFT_EYE, {
           color: '#FF3030',
           lineWidth: 1
         });
 
         // Lips
-        drawConnectors(ctx, landmarks, FACEMESH_LIPS, {
+        window.drawConnectors(ctx, landmarks, window.FACEMESH_LIPS, {
           color: '#E0E0E0',
           lineWidth: 1
         });
@@ -195,13 +192,13 @@ function CanvasProcessor({ videoRef, isAnalyzing, onFeaturesExtracted }) {
         const handColor = handedness === 'Left' ? '#FF6B6B' : '#4ECDC4';
 
         // Hand Connections
-        drawConnectors(ctx, handLandmarks, HAND_CONNECTIONS, {
+        window.drawConnectors(ctx, handLandmarks, window.HAND_CONNECTIONS, {
           color: handColor,
           lineWidth: 2
         });
 
         // Hand Landmarks
-        drawLandmarks(ctx, handLandmarks, {
+        window.drawLandmarks(ctx, handLandmarks, {
           color: handColor,
           lineWidth: 1,
           radius: 4

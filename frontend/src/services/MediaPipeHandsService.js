@@ -5,7 +5,7 @@
  * Alle Berechnungen erfolgen lokal im Browser!
  */
 
-import { Hands } from '@mediapipe/hands';
+// Hands via CDN global verfügbar (window.Hands)
 
 class MediaPipeHandsService {
   constructor() {
@@ -34,7 +34,13 @@ class MediaPipeHandsService {
     this.onResultsCallback = onResults;
 
     try {
-      // Hands Model laden
+      // Hands Model laden (via CDN global verfügbar)
+      const Hands = window.Hands;
+      
+      if (!Hands) {
+        throw new Error('MediaPipe Hands nicht geladen. Bitte Seite neu laden.');
+      }
+      
       this.hands = new Hands({
         locateFile: (file) => {
           // CDN-URL für MediaPipe-Dateien

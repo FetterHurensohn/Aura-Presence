@@ -5,7 +5,7 @@
  * Alle Berechnungen erfolgen lokal im Browser!
  */
 
-import { FaceMesh } from '@mediapipe/face_mesh';
+// FaceMesh via CDN global verfügbar (window.FaceMesh)
 
 class MediaPipeFaceMeshService {
   constructor() {
@@ -34,7 +34,13 @@ class MediaPipeFaceMeshService {
     this.onResultsCallback = onResults;
 
     try {
-      // Face Mesh Model laden
+      // Face Mesh Model laden (via CDN global verfügbar)
+      const FaceMesh = window.FaceMesh;
+      
+      if (!FaceMesh) {
+        throw new Error('MediaPipe FaceMesh nicht geladen. Bitte Seite neu laden.');
+      }
+      
       this.faceMesh = new FaceMesh({
         locateFile: (file) => {
           // CDN-URL für MediaPipe-Dateien

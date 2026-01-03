@@ -5,8 +5,8 @@
  * Alle Berechnungen erfolgen lokal im Browser!
  */
 
-import { Pose } from '@mediapipe/pose';
-import { Camera } from '@mediapipe/camera_utils';
+// MediaPipe-Import über CDN (da ESM-Import problematisch ist)
+// Die Pose-Klasse wird über window.Pose verfügbar gemacht
 import faceMeshService from './MediaPipeFaceMeshService.js';
 import handsService from './MediaPipeHandsService.js';
 
@@ -53,7 +53,14 @@ class MediaPipeOrchestratorService {
     this.onUnifiedResultsCallback = onUnifiedResults;
 
     try {
-      // 1. Pose-Model laden
+      // 1. Pose-Model laden (via CDN global verfügbar)
+      const Pose = window.Pose;
+      const Camera = window.Camera;
+      
+      if (!Pose || !Camera) {
+        throw new Error('MediaPipe nicht geladen. Bitte Seite neu laden.');
+      }
+      
       this.pose = new Pose({
         locateFile: (file) => {
           return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
