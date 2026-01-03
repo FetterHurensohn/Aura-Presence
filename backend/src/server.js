@@ -41,7 +41,21 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: function (origin, callback) {
+      // Allow all localhost
+      if (!origin || origin.startsWith('http://localhost:')) {
+        return callback(null, true);
+      }
+      // Allow all Vercel deployments for Aura Presence
+      if (origin.includes('aura-presence') && origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+      // Allow FRONTEND_URL from env
+      if (origin === process.env.FRONTEND_URL) {
+        return callback(null, true);
+      }
+      callback(null, false);
+    },
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -55,12 +69,14 @@ app.use(sentryRequestHandler());
 
 app.use(helmet());
 
-// CORS Configuration - Allow multiple origins for development
+// CORS Configuration - Allow multiple origins including all Vercel deployments
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:3000',
   'http://localhost:8080',
+  'https://aura-presence-analyser.vercel.app',
+  'https://aura-presence-p5fl.vercel.app',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
@@ -69,11 +85,22 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.includes(origin) || origin.startsWith('http://localhost:')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // Allow all localhost ports
+    if (origin.startsWith('http://localhost:')) {
+      return callback(null, true);
     }
+    
+    // Allow all vercel.app domains for Aura Presence
+    if (origin.includes('aura-presence') && origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Allow specific origins
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
