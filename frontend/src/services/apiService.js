@@ -9,11 +9,23 @@ import { withRetry } from '../utils/retryHelper';
 // API Base URL - Environment-abhängig
 // Development: Vite proxy (/api)
 // Production: Direkte Backend-URL
-const API_BASE_URL = import.meta.env.VITE_API_URL 
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : import.meta.env.PROD
-    ? 'https://aura-presence-backend-production.up.railway.app/api'  // Production Fallback
-    : '/api';  // Development (Vite Proxy)
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    // Remove trailing slash from env variable if present
+    const url = import.meta.env.VITE_API_URL.replace(/\/$/, '');
+    return `${url}/api`;
+  }
+  
+  if (import.meta.env.PROD) {
+    // Production fallback
+    return 'https://aura-presence-backend-production.up.railway.app/api';
+  }
+  
+  // Development (Vite Proxy)
+  return '/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Axios Instance erstellen
 const apiClient = axios.create({
