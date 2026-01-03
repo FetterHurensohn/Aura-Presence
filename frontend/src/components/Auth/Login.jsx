@@ -2,23 +2,33 @@
  * Login Component - EXAKT 1:1 vom Mockup
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../../services/authService';
 import { showSuccess } from '../../services/toastService';
 import './Auth.css';
 
 function Login({ onLogin }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  
+  // Use refs for form values
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Get values directly from inputs
+    const email = emailRef.current?.value || '';
+    const password = passwordRef.current?.value || '';
+    
+    // DEBUG: Console log für Debugging
+    console.log('Form submitted with:', { email, password: password ? '***' : 'empty' });
+    
     if (!email || !password) {
+      console.error('Validation failed:', { email: !!email, password: !!password });
       setError('Bitte alle Felder ausfüllen');
       return;
     }
@@ -70,10 +80,9 @@ function Login({ onLogin }) {
           <div className="auth-input-group">
             <label className="auth-label">E-Mail-Adresse</label>
             <input
+              ref={emailRef}
               type="email"
               className="auth-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
               autoComplete="email"
             />
@@ -82,10 +91,9 @@ function Login({ onLogin }) {
           <div className="auth-input-group">
             <label className="auth-label">Passwort</label>
             <input
+              ref={passwordRef}
               type="password"
               className="auth-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
               autoComplete="current-password"
             />

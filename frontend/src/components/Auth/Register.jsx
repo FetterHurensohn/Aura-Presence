@@ -2,22 +2,29 @@
  * Register Component - EXAKT 1:1 vom Mockup
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { register } from '../../services/authService';
 import { showSuccess } from '../../services/toastService';
 import './Auth.css';
 
 function Register({ onLogin }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  
+  // Use refs for form values
+  const emailRef = useRef(null);
+  const passwordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Get values directly from inputs
+    const email = emailRef.current?.value || '';
+    const password = passwordRef.current?.value || '';
+    const confirmPassword = confirmPasswordRef.current?.value || '';
     
     if (!email || !password || !confirmPassword) {
       setError('Bitte alle Felder ausfüllen');
@@ -86,10 +93,9 @@ function Register({ onLogin }) {
           <div className="auth-input-group">
             <label className="auth-label">E-Mail-Adresse</label>
             <input
+              ref={emailRef}
               type="email"
               className="auth-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
               autoComplete="email"
             />
@@ -98,10 +104,9 @@ function Register({ onLogin }) {
           <div className="auth-input-group">
             <label className="auth-label">Passwort</label>
             <input
+              ref={passwordRef}
               type="password"
               className="auth-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
               autoComplete="new-password"
             />
@@ -110,10 +115,9 @@ function Register({ onLogin }) {
           <div className="auth-input-group">
             <label className="auth-label">Passwort bestätigen</label>
             <input
+              ref={confirmPasswordRef}
               type="password"
               className="auth-input"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading}
               autoComplete="new-password"
             />
