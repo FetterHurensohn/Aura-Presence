@@ -11,7 +11,9 @@ import { withRetry } from '../utils/retryHelper';
 // Production: Direkte Backend-URL
 const API_BASE_URL = import.meta.env.VITE_API_URL 
   ? `${import.meta.env.VITE_API_URL}/api`
-  : '/api';
+  : import.meta.env.PROD
+    ? 'https://aura-presence-backend-production.up.railway.app/api'  // Production Fallback
+    : '/api';  // Development (Vite Proxy)
 
 // Axios Instance erstellen
 const apiClient = axios.create({
