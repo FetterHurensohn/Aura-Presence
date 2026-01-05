@@ -33,7 +33,14 @@ import sessionsRoutes from './routes/sessions.js';
 import signalingService from './services/signalingService.js';
 import socketAuthMiddleware from './middleware/socketAuth.js';
 
-dotenv.config();
+// Load environment variables (optional for Railway/Heroku)
+try {
+  dotenv.config();
+  console.log('✅ .env file loaded');
+} catch (err) {
+  // Railway/Heroku use environment variables directly
+  console.log('⚠️  No .env file found, using environment variables from platform');
+}
 
 // Initialisiere Sentry DIREKT nach dotenv.config()
 initSentry();
