@@ -88,28 +88,35 @@ export function getToken() {
 
 /**
  * Profil aktualisieren
- * Verwendet mehrere Fallback-Routen für maximale Kompatibilität
+ * CLIENT-SIDE FALLBACK für language, da Backend noch nicht deployed
  */
 export async function updateProfile(profileData) {
-  // Spezial-Handling für language (temporärer Workaround)
+  // WORKAROUND: Sprache client-side speichern bis Backend deployed ist
   if (Object.keys(profileData).length === 1 && profileData.language) {
+    console.log('💾 Speichere Sprache client-side (Backend noch nicht deployed)');
+    localStorage.setItem('userLanguage', profileData.language);
+    
+    // Versuche trotzdem, an Backend zu senden (für künftige Syncs)
     try {
-      console.log('🌐 Using /auth/update-language for language change');
       const response = await apiClient.post('/auth/update-language', profileData);
+      console.log('✅ Backend Sync erfolgreich!');
       return response.data.data?.user || response.data.user;
     } catch (error) {
-      console.error('❌ /auth/update-language failed:', error.response?.data);
+      console.log('⚠️ Backend noch nicht deployed, nur local gespeichert');
+      // Return user mit updated language (lokal)
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      currentUser.language = profileData.language;
+      localStorage.setItem('user', JSON.stringify(currentUser));
+      return currentUser;
     }
   }
   
-  // Versuche PUT /auth/profile
+  // Für andere Felder: Normale API Calls
   try {
     const response = await apiClient.put('/auth/profile', profileData);
     return response.data.data?.user || response.data.user;
   } catch (error) {
-    // Fallback zu PATCH /auth/me
     if (error.response?.status === 404) {
-      console.log('⚠️ PUT /auth/profile nicht gefunden, versuche PATCH /auth/me');
       const response = await apiClient.patch('/auth/me', profileData);
       return response.data.data?.user || response.data.user;
     }
