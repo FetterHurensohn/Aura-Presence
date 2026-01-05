@@ -17,6 +17,9 @@ function Register({ onLogin }) {
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
   const confirmPasswordRef = useRef(null);
+  const nameRef = useRef(null);
+  const companyRef = useRef(null);
+  const countryRef = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,8 +28,11 @@ function Register({ onLogin }) {
     const email = emailRef.current?.value || '';
     const password = passwordRef.current?.value || '';
     const confirmPassword = confirmPasswordRef.current?.value || '';
+    const name = nameRef.current?.value || '';
+    const company = companyRef.current?.value || '';
+    const country = countryRef.current?.value || '';
     
-    if (!email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword || !name || !company || !country) {
       setError('Bitte alle Felder ausfüllen');
       return;
     }
@@ -36,8 +42,13 @@ function Register({ onLogin }) {
       return;
     }
     
-    if (password.length < 6) {
-      setError('Passwort muss mindestens 6 Zeichen lang sein');
+    if (password.length < 8) {
+      setError('Passwort muss mindestens 8 Zeichen lang sein');
+      return;
+    }
+
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      setError('Passwort muss Groß-, Kleinbuchstaben und Zahl enthalten');
       return;
     }
 
@@ -50,7 +61,7 @@ function Register({ onLogin }) {
     setError('');
 
     try {
-      const user = await register(email, password);
+      const user = await register(email, password, name, company, country);
       onLogin(user);
       showSuccess('Erfolgreich registriert! Willkommen bei Aura Presence.');
       navigate('/onboarding');
@@ -91,6 +102,18 @@ function Register({ onLogin }) {
         {/* Form */}
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-input-group">
+            <label className="auth-label">Name</label>
+            <input
+              ref={nameRef}
+              type="text"
+              className="auth-input"
+              disabled={loading}
+              autoComplete="name"
+              placeholder="Dein vollständiger Name"
+            />
+          </div>
+
+          <div className="auth-input-group">
             <label className="auth-label">E-Mail-Adresse</label>
             <input
               ref={emailRef}
@@ -98,7 +121,63 @@ function Register({ onLogin }) {
               className="auth-input"
               disabled={loading}
               autoComplete="email"
+              placeholder="deine@email.com"
             />
+          </div>
+
+          <div className="auth-input-group">
+            <label className="auth-label">Unternehmen</label>
+            <input
+              ref={companyRef}
+              type="text"
+              className="auth-input"
+              disabled={loading}
+              autoComplete="organization"
+              placeholder="Dein Unternehmen"
+            />
+          </div>
+
+          <div className="auth-input-group">
+            <label className="auth-label">Land</label>
+            <select
+              ref={countryRef}
+              className="auth-input"
+              disabled={loading}
+              autoComplete="country"
+              defaultValue=""
+            >
+              <option value="" disabled>Wähle dein Land</option>
+              <option value="Deutschland">Deutschland</option>
+              <option value="Österreich">Österreich</option>
+              <option value="Schweiz">Schweiz</option>
+              <option value="Liechtenstein">Liechtenstein</option>
+              <option value="Luxemburg">Luxemburg</option>
+              <option value="">──────────────</option>
+              <option value="Belgien">Belgien</option>
+              <option value="Dänemark">Dänemark</option>
+              <option value="Finnland">Finnland</option>
+              <option value="Frankreich">Frankreich</option>
+              <option value="Griechenland">Griechenland</option>
+              <option value="Irland">Irland</option>
+              <option value="Italien">Italien</option>
+              <option value="Kroatien">Kroatien</option>
+              <option value="Niederlande">Niederlande</option>
+              <option value="Norwegen">Norwegen</option>
+              <option value="Polen">Polen</option>
+              <option value="Portugal">Portugal</option>
+              <option value="Schweden">Schweden</option>
+              <option value="Spanien">Spanien</option>
+              <option value="Tschechien">Tschechien</option>
+              <option value="Ungarn">Ungarn</option>
+              <option value="Vereinigtes Königreich">Vereinigtes Königreich</option>
+              <option value="">──────────────</option>
+              <option value="USA">USA</option>
+              <option value="Kanada">Kanada</option>
+              <option value="Australien">Australien</option>
+              <option value="Neuseeland">Neuseeland</option>
+              <option value="">──────────────</option>
+              <option value="Anderes">Anderes Land</option>
+            </select>
           </div>
 
           <div className="auth-input-group">
@@ -109,6 +188,7 @@ function Register({ onLogin }) {
               className="auth-input"
               disabled={loading}
               autoComplete="new-password"
+              placeholder="Mind. 8 Zeichen, Groß-/Kleinbuchstaben + Zahl"
             />
           </div>
 
@@ -120,6 +200,7 @@ function Register({ onLogin }) {
               className="auth-input"
               disabled={loading}
               autoComplete="new-password"
+              placeholder="Passwort wiederholen"
             />
           </div>
 

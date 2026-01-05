@@ -7,10 +7,13 @@ import apiClient from './apiService';
 /**
  * Benutzer registrieren
  */
-export async function register(email, password) {
+export async function register(email, password, name, company, country) {
   const response = await apiClient.post('/auth/register', {
     email,
-    password
+    password,
+    name,
+    company,
+    country
   });
   
   // Backend wrapped die Response in "data"

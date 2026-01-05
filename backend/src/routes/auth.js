@@ -25,7 +25,7 @@ const router = express.Router();
  * Neuen Benutzer registrieren
  */
 router.post('/register', validate(registerSchema), asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, name, company, country } = req.body;
   
   // Prüfen ob E-Mail bereits existiert
   const existingUser = await findUserByEmail(email);
@@ -33,8 +33,8 @@ router.post('/register', validate(registerSchema), asyncHandler(async (req, res)
     return sendEmailExists(res);
   }
   
-  // Benutzer erstellen
-  const user = await createUser(email, password);
+  // Benutzer erstellen mit Profildaten
+  const user = await createUser(email, password, { name, company, country });
   
   // Access Token generieren (kurze Lebensdauer: 15 Minuten)
   const token = generateToken(user.id, '15m');

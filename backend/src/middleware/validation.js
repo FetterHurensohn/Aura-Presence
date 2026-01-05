@@ -52,6 +52,33 @@ export const registerSchema = Joi.object({
       'string.min': 'Passwort muss mindestens 8 Zeichen lang sein',
       'string.pattern.base': 'Passwort muss Groß-, Kleinbuchstaben und Zahl enthalten',
       'any.required': 'Passwort ist erforderlich'
+    }),
+  name: Joi.string()
+    .min(2)
+    .max(255)
+    .required()
+    .messages({
+      'string.min': 'Name muss mindestens 2 Zeichen lang sein',
+      'string.max': 'Name darf maximal 255 Zeichen lang sein',
+      'any.required': 'Name ist erforderlich'
+    }),
+  company: Joi.string()
+    .min(2)
+    .max(255)
+    .required()
+    .messages({
+      'string.min': 'Unternehmen muss mindestens 2 Zeichen lang sein',
+      'string.max': 'Unternehmen darf maximal 255 Zeichen lang sein',
+      'any.required': 'Unternehmen ist erforderlich'
+    }),
+  country: Joi.string()
+    .min(2)
+    .max(100)
+    .required()
+    .messages({
+      'string.min': 'Land muss ausgewählt werden',
+      'string.max': 'Ungültiger Ländername',
+      'any.required': 'Land ist erforderlich'
     })
 });
 

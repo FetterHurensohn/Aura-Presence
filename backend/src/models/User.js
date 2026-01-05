@@ -11,17 +11,24 @@ const BCRYPT_ROUNDS = 10;
 /**
  * Benutzer erstellen
  */
-export async function createUser(email, password) {
+export async function createUser(email, password, profileData = {}) {
   const db = getDatabase();
   const passwordHash = bcrypt.hashSync(password, BCRYPT_ROUNDS);
   const timestamp = Date.now();
 
-  const [userId] = await db('users').insert({
+  const userData = {
     email,
     password_hash: passwordHash,
     created_at: timestamp,
     updated_at: timestamp,
-  }).returning('id');
+  };
+
+  // Optionale Profildaten hinzufügen
+  if (profileData.name) userData.name = profileData.name;
+  if (profileData.company) userData.company = profileData.company;
+  if (profileData.country) userData.country = profileData.country;
+
+  const [userId] = await db('users').insert(userData).returning('id');
 
   // PostgreSQL returning() gibt ein Objekt zurück: { id: 123 }
   const id = typeof userId === 'object' ? userId.id : userId;
@@ -88,5 +95,25 @@ export function sanitizeUser(user) {
   
   const { password_hash, ...sanitized } = user;
   return sanitized;
+}
+
+/**
+ * Profildaten aktualisieren
+ */
+export async function updateUserProfile(userId, profileData) {
+  const db = getDatabase();
+  const updateData = {
+    updated_at: Date.now(),
+  };
+  
+  if (profileData.name !== undefined) updateData.name = profileData.name;
+  if (profileData.company !== undefined) updateData.company = profileData.company;
+  if (profileData.country !== undefined) updateData.country = profileData.country;
+  
+  await db('users')
+    .where('id', userId)
+    .update(updateData);
+    
+  return findUserById(userId);
 }
 
