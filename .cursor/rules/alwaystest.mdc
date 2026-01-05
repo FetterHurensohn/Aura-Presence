@@ -1,3 +1,4 @@
 ---
 alwaysApply: true
 ---
+Öffne immer, wenn du eine neue Funktion einfühst oder eine Funktion bearbeitest, die Seite selbst und teste die Funktion. Wenn die Funktion nicht funktioniert, dann behebe den Fehler und wiederhole den test.

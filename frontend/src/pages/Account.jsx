@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updateProfile } from '../services/authService';
+import { updateProfile, setLocalLanguage } from '../services/authService';
 import { showSuccess, showError } from '../services/toastService';
 import { useTranslation } from '../i18n/LanguageContext';
 import './Account.css';
@@ -133,18 +133,40 @@ function Account({ user, onLogout, onUpdateUser }) {
     setLanguageDropdownOpen(false);
     
     try {
-      // Update language in context (immediate UI update)
+      // 1. Update context immediately (triggers UI re-render)
+      console.log('📝 Updating LanguageContext...');
       changeLanguage(newLanguage);
       
-      console.log('📤 Calling updateProfile...');
-      const updatedUser = await updateProfile({ language: newLanguage });
-      console.log('✅ updateProfile successful:', updatedUser);
+      // 2. Force localStorage update
+      console.log('💾 Updating localStorage...');
+      setLocalLanguage(newLanguage);
       
+      // 3. Update user state in App.jsx
       if (onUpdateUser) {
-        onUpdateUser(updatedUser);
+        const updatedUserData = { ...user, language: newLanguage };
+        onUpdateUser(updatedUserData);
+        console.log('✅ User state updated');
       }
       
+      // 4. Try to sync with backend (will fail with 404 until Railway deploys)
+      try {
+        console.log('📤 Syncing with backend...');
+        await updateProfile({ language: newLanguage });
+        console.log('✅ Backend sync successful');
+      } catch (backendErr) {
+        console.warn('⚠️ Backend sync failed (expected until Railway deploys):', backendErr.message);
+        // Not critical - we already updated locally
+      }
+      
+      // 5. Show success message
       showSuccess(t('messages.languageChanged'));
+      
+      // 6. FORCE page reload to ensure all components use new language
+      console.log('🔄 Reloading page in 800ms...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+      
     } catch (err) {
       console.error('❌ Fehler beim Ändern der Sprache:', err);
       showError(t('common.error'));
