@@ -50,25 +50,12 @@ const httpServer = createServer(app);
 // Socket.IO mit flexibler CORS Config
 const io = new Server(httpServer, {
   cors: {
-    origin: function (origin, callback) {
-      // No origin = allow (for native apps, postman, etc)
-      if (!origin) {
-        return callback(null, true);
-      }
-      
-      // Allow all localhost
-      if (origin.startsWith('http://localhost:')) {
-        return callback(null, true);
-      }
-      
-      // Allow ALL Vercel deployments for Aura Presence
-      if (origin.includes('aura-presence') && origin.endsWith('.vercel.app')) {
-        return callback(null, true);
-      }
-      
-      // Deny others
-      callback(null, false);
-    },
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://aura-presence-analyser.vercel.app',
+      /^https:\/\/aura-presence.*\.vercel\.app$/
+    ],
     methods: ['GET', 'POST'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -84,6 +71,13 @@ app.use(sentryRequestHandler());
 app.use(helmet());
 
 // CORS Configuration - Allow all Vercel deployments + localhost
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://aura-presence-analyser.vercel.app',
+  /^https:\/\/aura-presence.*\.vercel\.app$/  // All Vercel preview deployments
+];
+
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -91,23 +85,26 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Allow all localhost ports
-    if (origin.startsWith('http://localhost:')) {
+    // Check if origin is in allowed list or matches regex
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return allowed === origin;
+    });
+    
+    if (isAllowed || origin.startsWith('http://localhost:')) {
       return callback(null, true);
     }
     
-    // PRIORITY: Allow ALL Vercel deployments for Aura Presence
-    // This takes precedence over FRONTEND_URL env variable
-    if (origin.includes('aura-presence') && origin.endsWith('.vercel.app')) {
-      return callback(null, true);
-    }
-    
-    // Fallback: deny other origins
+    // Log rejected origin for debugging
+    logger.warn(`❌ CORS rejected origin: ${origin}`);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
