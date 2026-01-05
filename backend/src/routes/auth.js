@@ -6,7 +6,7 @@
 import express from 'express';
 import { createUser, findUserByEmail, verifyPassword, sanitizeUser, updateUserProfile } from '../models/User.js';
 import { generateToken, authenticateToken } from '../middleware/auth.js';
-import { validate, registerSchema, loginSchema } from '../middleware/validation.js';
+import { validate, registerSchema, loginSchema, profileSchema } from '../middleware/validation.js';
 import { generateRefreshToken, findRefreshToken, revokeRefreshToken } from '../models/RefreshToken.js';
 import logger from '../utils/logger.js';
 import { 
@@ -25,7 +25,7 @@ const router = express.Router();
  * Neuen Benutzer registrieren
  */
 router.post('/register', validate(registerSchema), asyncHandler(async (req, res) => {
-  const { email, password, name, company, country } = req.body;
+  const { email, password, name, company, country, language } = req.body;
   
   // Prüfen ob E-Mail bereits existiert
   const existingUser = await findUserByEmail(email);
@@ -33,8 +33,8 @@ router.post('/register', validate(registerSchema), asyncHandler(async (req, res)
     return sendEmailExists(res);
   }
   
-  // Benutzer erstellen mit Profildaten
-  const user = await createUser(email, password, { name, company, country });
+  // Benutzer erstellen mit Profildaten (inkl. language)
+  const user = await createUser(email, password, { name, company, country, language });
   
   // Access Token generieren (kurze Lebensdauer: 15 Minuten)
   const token = generateToken(user.id, '15m');
@@ -165,32 +165,16 @@ router.post('/logout', authenticateToken, asyncHandler(async (req, res) => {
  * PUT /api/auth/profile
  * Profildaten aktualisieren (geschützte Route)
  */
-router.put('/profile', authenticateToken, asyncHandler(async (req, res) => {
-  const { name, company, country } = req.body;
+router.put('/profile', authenticateToken, validate(profileSchema), asyncHandler(async (req, res) => {
+  const { name, company, country, language } = req.body;
   const userId = req.user.id;
   
-  // Validierung
+  // Alle Felder sind bereits durch Joi validiert
   const updateData = {};
-  if (name !== undefined) {
-    if (name.length < 2 || name.length > 255) {
-      return sendError(res, 400, ERROR_CODES.VALIDATION_ERROR, 'Name muss zwischen 2 und 255 Zeichen lang sein.');
-    }
-    updateData.name = name;
-  }
-  
-  if (company !== undefined) {
-    if (company.length < 2 || company.length > 255) {
-      return sendError(res, 400, ERROR_CODES.VALIDATION_ERROR, 'Unternehmen muss zwischen 2 und 255 Zeichen lang sein.');
-    }
-    updateData.company = company;
-  }
-  
-  if (country !== undefined) {
-    if (country.length < 2 || country.length > 100) {
-      return sendError(res, 400, ERROR_CODES.VALIDATION_ERROR, 'Land muss zwischen 2 und 100 Zeichen lang sein.');
-    }
-    updateData.country = country;
-  }
+  if (name !== undefined) updateData.name = name;
+  if (company !== undefined) updateData.company = company;
+  if (country !== undefined) updateData.country = country;
+  if (language !== undefined) updateData.language = language;
   
   // Update durchführen
   const updatedUser = await updateUserProfile(userId, updateData);

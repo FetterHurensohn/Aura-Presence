@@ -79,6 +79,13 @@ export const registerSchema = Joi.object({
       'string.min': 'Land muss ausgewählt werden',
       'string.max': 'Ungültiger Ländername',
       'any.required': 'Land ist erforderlich'
+    }),
+  language: Joi.string()
+    .valid('de', 'en', 'fr', 'es', 'it')
+    .optional()
+    .default('de')
+    .messages({
+      'any.only': 'Ungültige Sprache ausgewählt'
     })
 });
 
@@ -89,6 +96,24 @@ export const loginSchema = Joi.object({
   password: Joi.string()
     .required()
 });
+
+export const profileSchema = Joi.object({
+  name: Joi.string()
+    .min(2)
+    .max(255)
+    .optional(),
+  company: Joi.string()
+    .min(2)
+    .max(255)
+    .optional(),
+  country: Joi.string()
+    .min(2)
+    .max(100)
+    .optional(),
+  language: Joi.string()
+    .valid('de', 'en', 'fr', 'es', 'it')
+    .optional()
+}).min(1); // Mindestens ein Feld muss vorhanden sein
 
 export const analysisSchema = Joi.object({
   features: Joi.object({

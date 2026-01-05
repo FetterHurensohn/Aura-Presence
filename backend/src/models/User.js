@@ -27,6 +27,7 @@ export async function createUser(email, password, profileData = {}) {
   if (profileData.name) userData.name = profileData.name;
   if (profileData.company) userData.company = profileData.company;
   if (profileData.country) userData.country = profileData.country;
+  if (profileData.language) userData.language = profileData.language;
 
   const [userId] = await db('users').insert(userData).returning('id');
 
@@ -109,6 +110,7 @@ export async function updateUserProfile(userId, profileData) {
   if (profileData.name !== undefined) updateData.name = profileData.name;
   if (profileData.company !== undefined) updateData.company = profileData.company;
   if (profileData.country !== undefined) updateData.country = profileData.country;
+  if (profileData.language !== undefined) updateData.language = profileData.language;
   
   await db('users')
     .where('id', userId)
