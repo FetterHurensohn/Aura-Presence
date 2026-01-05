@@ -221,5 +221,31 @@ router.put('/profile', authenticateToken, validate(profileSchema), asyncHandler(
   });
 }));
 
+/**
+ * POST /api/auth/update-language
+ * TEMPORÄRE ROUTE: Nur Sprache ändern (Workaround für Railway Deploy-Problem)
+ */
+router.post('/update-language', authenticateToken, asyncHandler(async (req, res) => {
+  const { language } = req.body;
+  const userId = req.user.id;
+  
+  // Validiere language
+  if (!language || !['de', 'en', 'fr', 'es', 'it'].includes(language)) {
+    return sendError(res, 400, ERROR_CODES.VALIDATION_ERROR, 'Ungültige Sprache. Erlaubt: de, en, fr, es, it');
+  }
+  
+  logger.info(`🌐 Language update from user ${userId} to: ${language}`);
+  
+  // Update durchführen
+  const updatedUser = await updateUserProfile(userId, { language });
+  
+  logger.info(`✅ Language updated successfully for user ${userId}`);
+  
+  return sendSuccess(res, {
+    message: 'Sprache erfolgreich aktualisiert',
+    user: sanitizeUser(updatedUser)
+  });
+}));
+
 export default router;
 

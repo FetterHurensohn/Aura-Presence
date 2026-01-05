@@ -88,11 +88,22 @@ export function getToken() {
 
 /**
  * Profil aktualisieren
- * Verwendet PATCH /auth/me als Fallback für bessere Kompatibilität
+ * Verwendet mehrere Fallback-Routen für maximale Kompatibilität
  */
 export async function updateProfile(profileData) {
+  // Spezial-Handling für language (temporärer Workaround)
+  if (Object.keys(profileData).length === 1 && profileData.language) {
+    try {
+      console.log('🌐 Using /auth/update-language for language change');
+      const response = await apiClient.post('/auth/update-language', profileData);
+      return response.data.data?.user || response.data.user;
+    } catch (error) {
+      console.error('❌ /auth/update-language failed:', error.response?.data);
+    }
+  }
+  
+  // Versuche PUT /auth/profile
   try {
-    // Versuche PUT /auth/profile
     const response = await apiClient.put('/auth/profile', profileData);
     return response.data.data?.user || response.data.user;
   } catch (error) {
