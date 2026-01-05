@@ -21,6 +21,12 @@ function Account({ user, onLogout, onUpdateUser }) {
   // Language dropdown state
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
 
+  // Toggle dropdown
+  const toggleLanguageDropdown = () => {
+    console.log('🔵 toggleLanguageDropdown called! Current:', languageDropdownOpen);
+    setLanguageDropdownOpen(!languageDropdownOpen);
+  };
+
   // Language display map
   const languageNames = {
     'de': 'Deutsch',
@@ -226,17 +232,19 @@ function Account({ user, onLogout, onUpdateUser }) {
           {/* Sprache */}
           <div className="profile-field">
             <div className="field-label-bold">Sprache:</div>
-            <div className="language-selector-container">
+            <div 
+              className="language-selector-container"
+              onClick={(e) => {
+                console.log('🟢 Container clicked!');
+                e.stopPropagation();
+              }}
+            >
               <button 
                 className="language-selector-btn" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('🔵 Button clicked! Current state:', languageDropdownOpen);
-                  setLanguageDropdownOpen(!languageDropdownOpen);
-                }}
+                onClick={toggleLanguageDropdown}
                 disabled={loading}
                 type="button"
+                style={{ position: 'relative', zIndex: 9999 }}
               >
                 <span>{languageNames[user?.language] || languageNames['de']}</span>
                 <svg 
@@ -245,13 +253,14 @@ function Account({ user, onLogout, onUpdateUser }) {
                   fill="currentColor"
                   width="20" 
                   height="20"
+                  style={{ pointerEvents: 'none' }}
                 >
                   <path d="M7 10l5 5 5-5z"/>
                 </svg>
               </button>
               
               {languageDropdownOpen && (
-                <div className="language-dropdown">
+                <div className="language-dropdown" style={{ zIndex: 10000 }}>
                   <button 
                     className={`language-option ${user?.language === 'de' ? 'active' : ''}`}
                     onClick={(e) => {
