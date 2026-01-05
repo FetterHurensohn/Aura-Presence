@@ -2,6 +2,10 @@
  * Tests für WebRTC Signaling Service
  */
 
+/**
+ * @jest-environment node
+ */
+import { jest } from '@jest/globals';
 import signalingService from '../src/services/signalingService.js';
 
 describe('Signaling Service', () => {
