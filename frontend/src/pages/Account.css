@@ -153,11 +153,17 @@
   gap: 0.5rem;
   min-width: 150px;
   justify-content: space-between;
+  pointer-events: auto; /* Ensure clickable */
+  z-index: 1;
 }
 
 .language-selector-btn:hover {
   background: #0E7DB8;
   color: #FFFFFF;
+}
+
+.language-selector-btn:active {
+  transform: scale(0.98);
 }
 
 .language-selector-btn:disabled {
@@ -167,6 +173,7 @@
 
 .dropdown-icon {
   transition: transform 0.2s;
+  pointer-events: none; /* Don't block button clicks */
 }
 
 .dropdown-icon.open {
@@ -184,6 +191,18 @@
   z-index: 1000;
   min-width: 150px;
   overflow: hidden;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .language-option {
@@ -199,6 +218,7 @@
   transition: all 0.2s;
   text-align: left;
   border-bottom: 1px solid #E0E0E0;
+  pointer-events: auto; /* Ensure clickable */
 }
 
 .language-option:last-child {

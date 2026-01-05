@@ -120,12 +120,14 @@ function Account({ user, onLogout, onUpdateUser }) {
 
   // Handle language change
   const handleLanguageChange = async (newLanguage) => {
-    console.log('🌐 Changing language to:', newLanguage);
+    console.log('🌐 handleLanguageChange called with:', newLanguage);
     setLoading(true);
     setLanguageDropdownOpen(false);
     
     try {
+      console.log('📤 Calling updateProfile...');
       const updatedUser = await updateProfile({ language: newLanguage });
+      console.log('✅ updateProfile successful:', updatedUser);
       
       if (onUpdateUser) {
         onUpdateUser(updatedUser);
@@ -227,8 +229,14 @@ function Account({ user, onLogout, onUpdateUser }) {
             <div className="language-selector-container">
               <button 
                 className="language-selector-btn" 
-                onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔵 Button clicked! Current state:', languageDropdownOpen);
+                  setLanguageDropdownOpen(!languageDropdownOpen);
+                }}
                 disabled={loading}
+                type="button"
               >
                 <span>{languageNames[user?.language] || languageNames['de']}</span>
                 <svg 
@@ -246,31 +254,61 @@ function Account({ user, onLogout, onUpdateUser }) {
                 <div className="language-dropdown">
                   <button 
                     className={`language-option ${user?.language === 'de' ? 'active' : ''}`}
-                    onClick={() => handleLanguageChange('de')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('🇩🇪 Deutsch selected');
+                      handleLanguageChange('de');
+                    }}
+                    type="button"
                   >
                     Deutsch
                   </button>
                   <button 
                     className={`language-option ${user?.language === 'en' ? 'active' : ''}`}
-                    onClick={() => handleLanguageChange('en')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('🇬🇧 English selected');
+                      handleLanguageChange('en');
+                    }}
+                    type="button"
                   >
                     English
                   </button>
                   <button 
                     className={`language-option ${user?.language === 'fr' ? 'active' : ''}`}
-                    onClick={() => handleLanguageChange('fr')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('🇫🇷 Français selected');
+                      handleLanguageChange('fr');
+                    }}
+                    type="button"
                   >
                     Français
                   </button>
                   <button 
                     className={`language-option ${user?.language === 'es' ? 'active' : ''}`}
-                    onClick={() => handleLanguageChange('es')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('🇪🇸 Español selected');
+                      handleLanguageChange('es');
+                    }}
+                    type="button"
                   >
                     Español
                   </button>
                   <button 
                     className={`language-option ${user?.language === 'it' ? 'active' : ''}`}
-                    onClick={() => handleLanguageChange('it')}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('🇮🇹 Italiano selected');
+                      handleLanguageChange('it');
+                    }}
+                    type="button"
                   >
                     Italiano
                   </button>
