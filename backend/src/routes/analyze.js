@@ -137,5 +137,93 @@ function applyContentFilter(interpretation) {
   return filtered;
 }
 
+/**
+ * POST /api/analyze/save
+ * Speichere komplette Analyse-Session mit aggregierten Daten
+ * 
+ * Wird am Ende einer Live-Session aufgerufen
+ */
+router.post('/save',
+  authenticateToken,
+  asyncHandler(async (req, res) => {
+    const { summary, rawData } = req.body;
+    const userId = req.user.id;
+
+    if (!summary) {
+      return sendError(res, 400, ERROR_CODES.VALIDATION_ERROR, 'Summary ist erforderlich');
+    }
+
+    logger.info(`Speichere Analyse-Session für User ${userId}`);
+
+    try {
+      // Session in DB erstellen/updaten
+      const session = await createSession(userId, {
+        duration: summary.stats?.duration || 0,
+        totalFrames: summary.stats?.totalFrames || 0,
+        averageConfidence: summary.scores?.overall / 100 || 0,
+        metadata: JSON.stringify({
+          scores: summary.scores,
+          stats: summary.stats,
+          insights: summary.insights
+        })
+      });
+
+      // Optional: Generiere detailliertes AI-Feedback mit OpenAI
+      let aiFeedback = null;
+      if (process.env.OPENAI_API_KEY) {
+        try {
+          const aiContext = {
+            metrics: {
+              eyeContact: summary.scores.eyeContact / 100,
+              facialExpression: summary.scores.facialExpression / 100,
+              gestures: summary.scores.gestures / 100,
+              posture: summary.scores.posture / 100
+            },
+            stats: summary.stats,
+            insights: summary.insights,
+            duration: summary.stats.duration
+          };
+
+          aiFeedback = await generateInterpretation(aiContext);
+          
+          // Speichere AI-Feedback in Session
+          await updateSession(session.id, {
+            metadata: JSON.stringify({
+              ...JSON.parse(session.metadata || '{}'),
+              aiFeedback
+            })
+          });
+        } catch (aiError) {
+          logger.error('Fehler bei AI-Feedback-Generierung:', aiError);
+          // Fortfahren ohne AI-Feedback
+        }
+      }
+
+      // Log activity
+      await logUserActivity(userId, 'analysis_completed', { 
+        sessionId: session.id,
+        duration: summary.stats?.duration,
+        overallScore: summary.scores?.overall
+      }, req);
+
+      logger.info(`Analyse-Session ${session.id} erfolgreich gespeichert`);
+
+      return sendSuccess(res, {
+        sessionId: session.id,
+        summary,
+        aiFeedback,
+        message: 'Analyse erfolgreich gespeichert'
+      });
+
+    } catch (error) {
+      logger.error('Fehler beim Speichern der Analyse-Session:', error);
+      await logError(userId, 'analysis_save_error', error, req);
+      
+      return sendError(res, 500, ERROR_CODES.INTERNAL_ERROR, 
+        'Fehler beim Speichern der Analyse-Session');
+    }
+  })
+);
+
 export default router;
 

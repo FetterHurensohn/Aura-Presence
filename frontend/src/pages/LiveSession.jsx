@@ -1,35 +1,45 @@
 /**
- * Live Session Page - Echtzeit-Analyse während der Aufnahme
- * EXAKT 1:1 nach Foto
+ * Live Session Page - Echtzeit-Analyse mit MediaPipe
+ * EXAKT 1:1 nach Foto + MediaPipe Integration
  */
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import mediaPipeService from '../services/MediaPipeService';
+import { UnifiedFeatureExtractor } from '../services/FeatureExtractor';
+import analysisAggregator from '../services/AnalysisAggregator';
+import apiClient from '../services/apiService';
 import './LiveSession.css';
 
 function LiveSession() {
   const navigate = useNavigate();
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const [isRecording, setIsRecording] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [cameraOn, setCameraOn] = useState(true);
   const [microphoneOn, setMicrophoneOn] = useState(true);
   const [elapsedTime, setElapsedTime] = useState(0);
   
+  // MediaPipe State
+  const [mediaPipeInitialized, setMediaPipeInitialized] = useState(false);
+  const featureExtractorRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  const lastProcessTimeRef = useRef(0);
+  
   // Realtime Scores
   const [scores, setScores] = useState({
-    mimik: 29,
-    stimme: 29,
-    augenkontakt: 29,
-    koerperhaltung: 29
+    mimik: 0,
+    stimme: 29, // Audio wird separat analysiert
+    augenkontakt: 0,
+    koerperhaltung: 0
   });
 
   // KI-Tutor Feedback
   const [aiFeedback, setAiFeedback] = useState([
-    'Stehe stiller',
-    'Kopf gerade',
-    'Schau zum Publikum',
-    'Stottern!'
+    'Starte Kamera...',
+    'Lade MediaPipe...',
+    'Initialisiere Analyse...'
   ]);
 
   // Timer
@@ -55,35 +65,235 @@ function LiveSession() {
     const initCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: true, 
+          video: { width: 640, height: 480 }, 
           audio: true 
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          
+          // Warte bis Video bereit ist
+          videoRef.current.onloadedmetadata = () => {
+            initMediaPipe();
+          };
         }
       } catch (err) {
         console.error('Camera access error:', err);
+        setAiFeedback(['Kamera-Zugriff verweigert!', 'Bitte Kamera-Berechtigung erteilen']);
       }
     };
     initCamera();
 
     return () => {
+      // Cleanup
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      if (mediaPipeService.isReady()) {
+        mediaPipeService.close();
+      }
       if (videoRef.current && videoRef.current.srcObject) {
         videoRef.current.srcObject.getTracks().forEach(track => track.stop());
       }
     };
   }, []);
 
+  // Initialize MediaPipe
+  const initMediaPipe = async () => {
+    if (!videoRef.current || !cameraOn) return;
+    
+    try {
+      setAiFeedback(['Initialisiere MediaPipe...', 'Lade AI-Modelle...']);
+      
+      // Feature Extractor erstellen
+      featureExtractorRef.current = new UnifiedFeatureExtractor();
+      
+      // MediaPipe initialisieren
+      await mediaPipeService.initialize(
+        videoRef.current,
+        handleMediaPipeResults
+      );
+      
+      // Aggregator starten
+      analysisAggregator.start();
+      
+      setMediaPipeInitialized(true);
+      setAiFeedback(['Analyse gestartet!', 'Viel Erfolg!']);
+      
+      // Frame-Processing starten
+      startFrameProcessing();
+      
+      console.log('✅ MediaPipe erfolgreich initialisiert');
+      
+    } catch (error) {
+      console.error('MediaPipe Init-Fehler:', error);
+      setAiFeedback(['MediaPipe-Fehler!', 'Bitte Seite neu laden']);
+    }
+  };
+
+  // Frame Processing Loop (15 FPS für Performance)
+  const startFrameProcessing = () => {
+    const processFrame = async () => {
+      const now = Date.now();
+      const timeSinceLastProcess = now - lastProcessTimeRef.current;
+      
+      // Process mit max 15 FPS (66ms zwischen Frames)
+      if (videoRef.current && 
+          mediaPipeService.isReady() && 
+          !isPaused && 
+          timeSinceLastProcess > 66) {
+        
+        lastProcessTimeRef.current = now;
+        
+        try {
+          await mediaPipeService.processFrame(videoRef.current);
+        } catch (error) {
+          console.error('Frame processing error:', error);
+        }
+      }
+      
+      animationFrameRef.current = requestAnimationFrame(processFrame);
+    };
+    processFrame();
+  };
+
+  // MediaPipe Results Handler
+  const handleMediaPipeResults = (results) => {
+    if (!featureExtractorRef.current || isPaused) return;
+    
+    try {
+      // Features extrahieren
+      const features = featureExtractorRef.current.extractUnified(
+        results.pose,
+        results.faceMesh,
+        results.hands
+      );
+      
+      if (!features) return;
+      
+      // An Aggregator senden
+      analysisAggregator.addFeatures(features);
+      
+      // Scores berechnen und UI aktualisieren (alle 2 Sekunden)
+      if (elapsedTime % 2 === 0) {
+        const currentScores = analysisAggregator.calculateScores();
+        setScores({
+          mimik: currentScores.facialExpression || 0,
+          stimme: scores.stimme, // Audio wird separat analysiert
+          augenkontakt: currentScores.eyeContact || 0,
+          koerperhaltung: currentScores.posture || 0
+        });
+        
+        // Echtzeit-Feedback generieren
+        updateAIFeedback(features, currentScores);
+      }
+      
+    } catch (error) {
+      console.error('Error handling MediaPipe results:', error);
+    }
+  };
+
+  // AI Feedback Update basierend auf Features
+  const updateAIFeedback = (features, currentScores) => {
+    const feedback = [];
+    
+    // Augenkontakt
+    if (features.eye_contact_quality !== undefined) {
+      if (features.eye_contact_quality < 0.5) {
+        feedback.push('👁️ Blickkontakt zur Kamera!');
+      } else if (features.eye_contact_quality > 0.8) {
+        feedback.push('✅ Sehr guter Blickkontakt!');
+      }
+    }
+    
+    // Körperhaltung
+    if (features.posture_angle !== undefined) {
+      if (Math.abs(features.posture_angle) > 15) {
+        feedback.push('📐 Stehe aufrechter!');
+      } else if (Math.abs(features.posture_angle) < 5) {
+        feedback.push('✅ Perfekte Haltung!');
+      }
+    }
+    
+    // Handbewegung
+    const handMovement = features.hand_movement_speed || features.hand_movement_freq || 0;
+    if (handMovement > 0.5) {
+      feedback.push('✋ Weniger hektisch!');
+    } else if (handMovement < 0.05 && elapsedTime > 10) {
+      feedback.push('💡 Nutze mehr Gestik!');
+    }
+    
+    // Mimik
+    if (features.facial_expression) {
+      if (features.facial_expression === 'neutral' && elapsedTime > 15) {
+        feedback.push('😊 Mehr lächeln!');
+      } else if (features.facial_expression === 'smiling') {
+        feedback.push('✅ Toll, du lächelst!');
+      }
+    }
+    
+    // Blinzelrate
+    if (features.blink_rate !== undefined) {
+      if (features.blink_rate < 10) {
+        feedback.push('😌 Entspann dich!');
+      } else if (features.blink_rate > 30) {
+        feedback.push('👀 Etwas ruhiger!');
+      }
+    }
+    
+    // Head Pose
+    if (features.head_pose) {
+      if (Math.abs(features.head_pose.yaw) > 20) {
+        feedback.push('⬅️➡️ Kopf gerade!');
+      }
+      if (Math.abs(features.head_pose.pitch) > 15) {
+        feedback.push('⬆️⬇️ Nicht nicken!');
+      }
+    }
+    
+    // Overall Performance
+    if (currentScores.overall > 80) {
+      feedback.push('🌟 Hervorragend!');
+    }
+    
+    // Maximal 4 Tipps
+    if (feedback.length === 0) {
+      feedback.push('👍 Weiter so!');
+    }
+    
+    setAiFeedback(feedback.slice(0, 4));
+  };
+
   const handlePlayPause = () => {
     setIsPaused(!isPaused);
+    if (!isPaused) {
+      // Pause
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    } else {
+      // Resume
+      startFrameProcessing();
+    }
   };
 
   const handleToggleCamera = () => {
-    setCameraOn(!cameraOn);
+    const newCameraState = !cameraOn;
+    setCameraOn(newCameraState);
+    
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject.getVideoTracks().forEach(track => {
-        track.enabled = !cameraOn;
+        track.enabled = newCameraState;
       });
+    }
+    
+    if (!newCameraState) {
+      // Stop MediaPipe when camera off
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    } else {
+      // Restart MediaPipe
+      startFrameProcessing();
     }
   };
 
@@ -96,13 +306,53 @@ function LiveSession() {
     }
   };
 
-  const handleStop = () => {
+  const handleStop = async () => {
     setIsRecording(false);
+    setIsPaused(true);
+    
+    // Stop MediaPipe
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    if (mediaPipeService.isReady()) {
+      mediaPipeService.close();
+    }
+    
+    // Finale Analyse generieren
+    const analysisData = analysisAggregator.exportForBackend();
+    
+    console.log('📊 Finale Analyse:', analysisData);
+    
+    // An Backend senden
+    try {
+      const response = await apiClient.post('/analyze/save', analysisData);
+      
+      console.log('✅ Analyse gespeichert:', response.data);
+      
+      // Zu Ergebnis-Seite navigieren
+      navigate('/analysis-result', { 
+        state: { 
+          sessionId: response.data.data?.sessionId,
+          analysis: analysisData.summary,
+          aiFeedback: response.data.data?.aiFeedback
+        } 
+      });
+    } catch (error) {
+      console.error('❌ Fehler beim Speichern:', error);
+      
+      // Navigiere trotzdem zur Ergebnis-Seite (mit lokalen Daten)
+      navigate('/analysis-result', { 
+        state: { 
+          analysis: analysisData.summary,
+          error: 'Analyse konnte nicht gespeichert werden'
+        } 
+      });
+    }
+    
+    // Kamera stoppen
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject.getTracks().forEach(track => track.stop());
     }
-    // Navigate to analysis result
-    navigate('/analysis-result');
   };
 
   return (
@@ -115,6 +365,31 @@ function LiveSession() {
         playsInline 
         muted
       />
+
+      {/* Hidden Canvas für MediaPipe (optional, falls benötigt) */}
+      <canvas 
+        ref={canvasRef}
+        style={{ display: 'none' }}
+        width="640"
+        height="480"
+      />
+
+      {/* MediaPipe Status Indicator */}
+      {mediaPipeInitialized && (
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          left: '10px',
+          background: 'rgba(0, 200, 0, 0.8)',
+          color: 'white',
+          padding: '5px 10px',
+          borderRadius: '5px',
+          fontSize: '12px',
+          fontWeight: 'bold'
+        }}>
+          🎥 MediaPipe Active
+        </div>
+      )}
 
       {/* KI-Tutor Sprechblase - Oben Rechts */}
       <div className="ai-tutor-bubble">
@@ -233,7 +508,7 @@ function LiveSession() {
             )}
           </button>
 
-          <button className="control-btn stop-btn" onClick={handleStop} title="Aufnahme beenden">
+          <button className="control-btn stop-btn" onClick={handleStop} title="Aufnahme beenden" disabled={!isRecording}>
             <svg viewBox="0 0 32 32" fill="white">
               <path d="M15.003,23.063l-2.994,-0c-0.795,-0 -1.558,0.316 -2.121,0.878c-0.563,0.563 -0.879,1.326 -0.879,2.122c0,0.638 0,1.345 0,1.984c0,0.796 0.316,1.559 0.879,2.121c0.563,0.563 1.326,0.879 2.121,0.879l7.993,0c0.796,0 1.559,-0.316 2.122,-0.879c0.562,-0.562 0.878,-1.325 0.878,-2.121l0,-1.984c0,-0.796 -0.316,-1.559 -0.878,-2.122c-0.563,-0.562 -1.326,-0.878 -2.122,-0.878l-2.999,-0l-0.03,-21.081c-0.001,-0.551 -0.45,-0.999 -1.002,-0.998c-0.551,0.001 -0.999,0.449 -0.998,1.001l0.03,21.078Z"/>
               <path d="M18.974,2.988l0.018,12.012l9.008,-0c0.384,0 0.735,-0.22 0.901,-0.567c0.167,-0.346 0.12,-0.757 -0.12,-1.057l-3.501,-4.382c0,-0 3.501,-4.382 3.501,-4.382c0.24,-0.3 0.287,-0.712 0.12,-1.058c-0.166,-0.346 -0.517,-0.566 -0.901,-0.566l-9.026,-0Z"/>
