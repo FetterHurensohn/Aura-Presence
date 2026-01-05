@@ -381,19 +381,36 @@ function LiveSession() {
       // Voice Analyzer initialisieren (wenn Mikrofon an)
       if (microphoneOn && streamRef.current) {
         try {
-          await voiceAnalyzer.initialize(streamRef.current, 'de-DE');
-          setVoiceAnalyzerInitialized(true);
+          console.log('🎤 Initializing Voice Analyzer...');
+          console.log('Stream:', streamRef.current);
+          console.log('Audio Tracks:', streamRef.current.getAudioTracks());
           
-          // Voice Score Update Interval (alle 2 Sekunden)
-          voiceUpdateIntervalRef.current = setInterval(() => {
-            updateVoiceScore();
-          }, 2000);
-          
-          console.log('✅ Voice Analyzer erfolgreich initialisiert');
+          const audioTracks = streamRef.current.getAudioTracks();
+          if (audioTracks.length === 0) {
+            console.warn('⚠️ No audio tracks found in stream!');
+            setAiFeedback(['⚠️ Mikrofon nicht gefunden', 'Bitte Berechtigung prüfen', '✅ Analyse läuft (ohne Voice)']);
+          } else {
+            console.log('✅ Audio track found:', audioTracks[0].label, 'enabled:', audioTracks[0].enabled);
+            
+            await voiceAnalyzer.initialize(streamRef.current, 'de-DE');
+            setVoiceAnalyzerInitialized(true);
+            
+            // Voice Score Update Interval (alle 2 Sekunden)
+            voiceUpdateIntervalRef.current = setInterval(() => {
+              updateVoiceScore();
+            }, 2000);
+            
+            console.log('✅ Voice Analyzer erfolgreich initialisiert');
+            setAiFeedback(['✅ Analyse läuft!', '🎤 Voice Analyzer aktiv', '👍 Viel Erfolg!']);
+          }
         } catch (err) {
-          console.warn('⚠️ Voice Analyzer konnte nicht initialisiert werden:', err);
-          // Weiter ohne Voice Analyzer
+          console.error('❌ Voice Analyzer Fehler:', err);
+          console.error('Error details:', err.message, err.stack);
+          setAiFeedback(['⚠️ Voice Analyzer Fehler', 'Analyse läuft ohne Stimme', '✅ MediaPipe aktiv']);
         }
+      } else {
+        console.warn('⚠️ Mikrofon aus oder Stream nicht verfügbar');
+        setAiFeedback(['✅ Analyse läuft!', '⚠️ Mikrofon aus', '👍 Viel Erfolg!']);
       }
       
       // Aggregator starten
@@ -675,10 +692,22 @@ function LiveSession() {
 
   // Voice Score Update (alle 2 Sekunden)
   const updateVoiceScore = () => {
-    if (!voiceAnalyzer.isRunning) return;
+    if (!voiceAnalyzer.isRunning) {
+      console.warn('⚠️ Voice Analyzer not running');
+      return;
+    }
     
     try {
       const voiceAnalysis = voiceAnalyzer.getRealtimeAnalysis();
+      
+      console.log('🎤 Voice Analysis Update:', {
+        overall: voiceAnalysis.overall,
+        volume: voiceAnalysis.volume.average.toFixed(3),
+        wpm: voiceAnalysis.speech.wordsPerMinute,
+        fillerWords: voiceAnalysis.speech.fillerWordCount,
+        pauses: voiceAnalysis.pauses.count,
+        isRunning: voiceAnalyzer.isRunning
+      });
       
       // Update Stimme-Score (Overall Voice Score)
       setScores(prevScores => ({
@@ -686,17 +715,8 @@ function LiveSession() {
         stimme: voiceAnalysis.overall
       }));
       
-      // Debug Log (alle 10 Updates = 20 Sekunden)
-      if (Math.random() < 0.1) {
-        console.log('🎤 Voice Score:', {
-          overall: voiceAnalysis.overall,
-          wpm: voiceAnalysis.speech.wordsPerMinute,
-          fillerWords: voiceAnalysis.speech.fillerWordCount,
-          pauses: voiceAnalysis.pauses.count
-        });
-      }
     } catch (err) {
-      console.error('Error updating voice score:', err);
+      console.error('❌ Error updating voice score:', err);
     }
   };
 
@@ -975,6 +995,36 @@ function LiveSession() {
               }
             `}
           </style>
+        </div>
+      )}
+
+      {/* Voice Analyzer Status Indicator - NEU! */}
+      {voiceAnalyzerInitialized && (
+        <div style={{
+          position: 'absolute',
+          top: '60px',
+          left: '15px',
+          background: 'rgba(0, 122, 90, 0.9)',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '8px',
+          fontSize: '13px',
+          fontWeight: 'bold',
+          fontFamily: 'Roboto, sans-serif',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          zIndex: 10
+        }}>
+          <div style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: '#00FF00',
+            animation: 'pulse 2s infinite'
+          }}></div>
+          🎤 Voice Analyzer
         </div>
       )}
 

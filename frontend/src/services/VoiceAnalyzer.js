@@ -87,11 +87,17 @@ class VoiceAnalyzer {
    * Audio Analysis mit Meyda initialisieren
    */
   async initAudioAnalysis(stream) {
+    console.log('🔊 Initializing Audio Analysis...');
+    console.log('Stream:', stream);
+    console.log('Audio Tracks:', stream.getAudioTracks());
+    
     // Audio Context erstellen
     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    console.log('✅ AudioContext created:', this.audioContext.state);
     
     // MediaStream als Audio Source
     const source = this.audioContext.createMediaStreamSource(stream);
+    console.log('✅ MediaStreamSource created');
     
     // Meyda Analyzer erstellen
     this.analyzer = Meyda.createMeydaAnalyzer({
@@ -102,22 +108,29 @@ class VoiceAnalyzer {
       callback: (features) => this.handleAudioFeatures(features)
     });
     
+    console.log('✅ Meyda Analyzer created');
+    
     // Start Analysis
     this.analyzer.start();
-    console.log('✅ Audio Analysis started');
+    console.log('✅ Audio Analysis started, isRunning:', this.isRunning);
   }
 
   /**
    * Speech Recognition initialisieren
    */
   async initSpeechRecognition(language) {
+    console.log('🗣️ Initializing Speech Recognition...');
+    
     // Check Browser Support
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
       console.warn('⚠️ Speech Recognition not supported in this browser');
+      console.warn('Browser:', navigator.userAgent);
       return;
     }
+    
+    console.log('✅ Speech Recognition supported');
     
     this.recognition = new SpeechRecognition();
     this.recognition.lang = language;
@@ -128,16 +141,30 @@ class VoiceAnalyzer {
     // Event Handlers
     this.recognition.onresult = (event) => this.handleSpeechResult(event);
     this.recognition.onerror = (event) => this.handleSpeechError(event);
+    this.recognition.onstart = () => {
+      console.log('✅ Speech Recognition started');
+    };
     this.recognition.onend = () => {
+      console.log('⚠️ Speech Recognition ended');
       // Auto-restart wenn noch läuft
       if (this.isRunning) {
-        this.recognition.start();
+        console.log('🔄 Restarting Speech Recognition...');
+        try {
+          this.recognition.start();
+        } catch (err) {
+          console.error('Failed to restart:', err);
+        }
       }
     };
     
     // Start Recognition
-    this.recognition.start();
-    console.log('✅ Speech Recognition started');
+    try {
+      this.recognition.start();
+      console.log('✅ Speech Recognition start called');
+    } catch (err) {
+      console.error('❌ Failed to start Speech Recognition:', err);
+      throw err;
+    }
   }
 
   /**
@@ -190,13 +217,14 @@ class VoiceAnalyzer {
       }
     }
     
-    // Debug-Log (alle 2 Sekunden)
-    if (Math.random() < 0.01) {
+    // Debug-Log (alle 5 Sekunden = alle ~100 Callbacks bei 512 bufferSize)
+    if (Math.random() < 0.002) {
       console.log('🎤 Audio Features:', {
         rms: features.rms?.toFixed(3),
         energy: features.energy?.toFixed(3),
         zcr: features.zcr?.toFixed(3),
-        pauses: this.features.pauses.length
+        pauses: this.features.pauses.length,
+        volumeDataPoints: this.features.volume.length
       });
     }
   }
