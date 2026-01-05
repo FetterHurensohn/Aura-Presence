@@ -41,8 +41,15 @@ function Account({ user, onLogout, onUpdateUser }) {
   };
 
   const handleSaveEdit = async () => {
-    if (!editValue || editValue.trim().length === 0) {
+    // Für language ist trim() nicht nötig, da es ein Dropdown ist
+    if (editField !== 'language' && (!editValue || editValue.trim().length === 0)) {
       showError('Bitte einen gültigen Wert eingeben');
+      return;
+    }
+    
+    // Für language: Prüfe ob ein gültiger Wert ausgewählt wurde
+    if (editField === 'language' && !editValue) {
+      showError('Bitte eine Sprache auswählen');
       return;
     }
 
@@ -59,7 +66,7 @@ function Account({ user, onLogout, onUpdateUser }) {
       } else if (editField === 'country') {
         updateData.country = editValue.trim();
       } else if (editField === 'language') {
-        updateData.language = editValue;
+        updateData.language = editValue; // Kein trim() für language codes
       } else if (editField === 'password') {
         // TODO: Implement password change separately
         showError('Passwort-Änderung noch nicht implementiert');
@@ -67,8 +74,12 @@ function Account({ user, onLogout, onUpdateUser }) {
         return;
       }
 
+      console.log('🔄 Updating profile with:', updateData);
+
       // Update profile via API
       const updatedUser = await updateProfile(updateData);
+      
+      console.log('✅ Profile updated:', updatedUser);
       
       // Update parent component's user state
       if (onUpdateUser) {
@@ -79,7 +90,7 @@ function Account({ user, onLogout, onUpdateUser }) {
       setEditModalOpen(false);
       setEditValue('');
     } catch (err) {
-      console.error('Fehler beim Aktualisieren:', err);
+      console.error('❌ Fehler beim Aktualisieren:', err);
       showError(err.response?.data?.message || 'Fehler beim Aktualisieren des Profils');
     } finally {
       setLoading(false);

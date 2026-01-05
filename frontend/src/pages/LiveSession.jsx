@@ -256,18 +256,29 @@ function LiveSession() {
       // An Aggregator senden
       analysisAggregator.addFeatures(features);
       
-      // Scores berechnen und UI aktualisieren (alle 2 Sekunden)
+      // Scores SOFORT berechnen und UI aktualisieren (jedes Frame)
+      const currentScores = analysisAggregator.calculateScores();
+      
+      // Scores mit Smoothing für bessere Visualisierung
+      setScores(prevScores => ({
+        mimik: Math.round(currentScores.facialExpression || prevScores.mimik),
+        stimme: prevScores.stimme, // Audio wird separat analysiert
+        augenkontakt: Math.round(currentScores.eyeContact || prevScores.augenkontakt),
+        koerperhaltung: Math.round(currentScores.posture || prevScores.koerperhaltung)
+      }));
+      
+      // Echtzeit-Feedback generieren (alle 2 Sekunden)
       if (elapsedTime % 2 === 0) {
-        const currentScores = analysisAggregator.calculateScores();
-        setScores({
-          mimik: currentScores.facialExpression || 0,
-          stimme: scores.stimme, // Audio wird separat analysiert
-          augenkontakt: currentScores.eyeContact || 0,
-          koerperhaltung: currentScores.posture || 0
-        });
-        
-        // Echtzeit-Feedback generieren
         updateAIFeedback(features, currentScores);
+      }
+      
+      // Debug Log (jede 30 Frames = ~2 Sekunden bei 15 FPS)
+      if (Math.random() < 0.033) {
+        console.log('📊 Live Scores:', {
+          mimik: Math.round(currentScores.facialExpression || 0),
+          augenkontakt: Math.round(currentScores.eyeContact || 0),
+          koerperhaltung: Math.round(currentScores.posture || 0)
+        });
       }
       
     } catch (error) {
