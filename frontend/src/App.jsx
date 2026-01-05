@@ -7,6 +7,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import ErrorBoundary from './components/ErrorBoundary';
 import ConsentManager from './components/ConsentManager';
+import { LanguageProvider } from './i18n/LanguageContext';
+import { getLocalLanguage } from './services/authService';
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
 import Dashboard from './components/Dashboard';
@@ -83,11 +85,12 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ConsentManager>
-        <Router>
-        <div className="app">
-          <Toaster />
-          <Routes>
+      <LanguageProvider initialLanguage={user?.language || getLocalLanguage()}>
+        <ConsentManager>
+          <Router>
+          <div className="app">
+            <Toaster />
+            <Routes>
             <Route 
               path="/login" 
               element={user ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} 
@@ -194,6 +197,7 @@ function App() {
         </div>
       </Router>
       </ConsentManager>
+      </LanguageProvider>
     </ErrorBoundary>
   );
 }

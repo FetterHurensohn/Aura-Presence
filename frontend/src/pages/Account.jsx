@@ -7,11 +7,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updateProfile } from '../services/authService';
 import { showSuccess, showError } from '../services/toastService';
+import { useTranslation } from '../i18n/LanguageContext';
 import './Account.css';
 
 function Account({ user, onLogout, onUpdateUser }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { t, changeLanguage } = useTranslation();
   
   // Edit Modal States
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -131,6 +133,9 @@ function Account({ user, onLogout, onUpdateUser }) {
     setLanguageDropdownOpen(false);
     
     try {
+      // Update language in context (immediate UI update)
+      changeLanguage(newLanguage);
+      
       console.log('📤 Calling updateProfile...');
       const updatedUser = await updateProfile({ language: newLanguage });
       console.log('✅ updateProfile successful:', updatedUser);
@@ -139,10 +144,10 @@ function Account({ user, onLogout, onUpdateUser }) {
         onUpdateUser(updatedUser);
       }
       
-      showSuccess('Sprache erfolgreich geändert!');
+      showSuccess(t('messages.languageChanged'));
     } catch (err) {
       console.error('❌ Fehler beim Ändern der Sprache:', err);
-      showError('Fehler beim Ändern der Sprache');
+      showError(t('common.error'));
     } finally {
       setLoading(false);
     }

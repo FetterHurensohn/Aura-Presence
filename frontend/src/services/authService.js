@@ -124,7 +124,17 @@ export async function updateProfile(profileData) {
   }
 }
 
+/**
+ * Get language from localStorage
+ */
+export function getLocalLanguage() {
+  return localStorage.getItem('userLanguage') || 'de';
+}
 
-
-
+/**
+ * Set language in localStorage
+ */
+export function setLocalLanguage(language) {
+  localStorage.setItem('userLanguage', language);
+}
 
