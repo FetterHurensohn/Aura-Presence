@@ -29,6 +29,7 @@ function LiveSession() {
   const featureExtractorRef = useRef(null);
   const animationFrameRef = useRef(null);
   const lastProcessTimeRef = useRef(0);
+  const showMediaPipeLinesRef = useRef(true); // Ref für Callback-Zugriff
   
   // Realtime Scores
   const [scores, setScores] = useState({
@@ -490,8 +491,8 @@ function LiveSession() {
     // Canvas IMMER leeren (auch wenn Visualisierung aus ist)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // WICHTIG: Nur zeichnen wenn showMediaPipeLines aktiv ist!
-    if (!showMediaPipeLines) {
+    // WICHTIG: Verwende REF statt State (für Callback-Zugriff)!
+    if (!showMediaPipeLinesRef.current) {
       return;
     }
     
@@ -782,6 +783,7 @@ function LiveSession() {
   const handleToggleMediaPipeLines = () => {
     const newState = !showMediaPipeLines;
     setShowMediaPipeLines(newState);
+    showMediaPipeLinesRef.current = newState; // WICHTIG: Ref synchronisieren!
     
     console.log(newState ? '👁️ MediaPipe Linien anzeigen' : '🙈 MediaPipe Linien ausblenden');
     
