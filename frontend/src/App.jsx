@@ -60,6 +60,10 @@ function App() {
     setUser(null);
   };
 
+  const handleUpdateUser = (userData) => {
+    setUser(userData);
+  };
+
   if (loading) {
     return (
       <div className="app-loading">
@@ -143,7 +147,7 @@ function App() {
             {/* Account & Settings */}
             <Route 
               path="/account" 
-              element={user ? <Account user={user} onLogout={handleLogout} /> : <Navigate to="/login" />} 
+              element={user ? <Account user={user} onLogout={handleLogout} onUpdateUser={handleUpdateUser} /> : <Navigate to="/login" />}
             />
             
             {/* Privacy & Compliance */}

@@ -5,11 +5,14 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { updateProfile } from '../services/authService';
+import { showSuccess, showError } from '../services/toastService';
 import './Account.css';
 
-function Account({ user, onLogout }) {
+function Account({ user, onLogout, onUpdateUser }) {
   const navigate = useNavigate();
   const [language, setLanguage] = useState('Deutsch');
+  const [loading, setLoading] = useState(false);
   
   // Edit Modal States
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -29,10 +32,48 @@ function Account({ user, onLogout }) {
     setEditModalOpen(true);
   };
 
-  const handleSaveEdit = () => {
-    console.log(`Saving ${editField}:`, editValue);
-    // TODO: Implement actual save functionality
-    setEditModalOpen(false);
+  const handleSaveEdit = async () => {
+    if (!editValue || editValue.trim().length === 0) {
+      showError('Bitte einen gültigen Wert eingeben');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      // Prepare update data based on field
+      const updateData = {};
+      
+      if (editField === 'name') {
+        updateData.name = editValue.trim();
+      } else if (editField === 'company') {
+        updateData.company = editValue.trim();
+      } else if (editField === 'country') {
+        updateData.country = editValue.trim();
+      } else if (editField === 'password') {
+        // TODO: Implement password change separately
+        showError('Passwort-Änderung noch nicht implementiert');
+        setLoading(false);
+        return;
+      }
+
+      // Update profile via API
+      const updatedUser = await updateProfile(updateData);
+      
+      // Update parent component's user state
+      if (onUpdateUser) {
+        onUpdateUser(updatedUser);
+      }
+      
+      showSuccess('Profil erfolgreich aktualisiert');
+      setEditModalOpen(false);
+      setEditValue('');
+    } catch (err) {
+      console.error('Fehler beim Aktualisieren:', err);
+      showError(err.response?.data?.message || 'Fehler beim Aktualisieren des Profils');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -69,8 +110,8 @@ function Account({ user, onLogout }) {
           <div className="profile-field">
             <div className="field-label-bold">Vor- und Nachname:</div>
             <div className="field-row">
-              <span className="field-value">{user?.name || 'Jacques Dong'}</span>
-              <button className="edit-icon-btn" onClick={() => handleEdit('name', user?.name || 'Jacques Dong')}>
+              <span className="field-value">{user?.name || 'Nicht angegeben'}</span>
+              <button className="edit-icon-btn" onClick={() => handleEdit('name', user?.name || '')}>
                 <svg viewBox="0 0 32 32" fill="currentColor">
                   <path d="M25.384,11.987a.993.993,0,0,1-.707-.293L20.434,7.452a1,1,0,0,1,0-1.414l2.122-2.121a3.07,3.07,0,0,1,4.242,0l1.414,1.414a3,3,0,0,1,0,4.242l-2.122,2.121A.993.993,0,0,1,25.384,11.987ZM22.555,6.745l2.829,2.828L26.8,8.159a1,1,0,0,0,0-1.414L25.384,5.331a1.023,1.023,0,0,0-1.414,0Z"/>
                   <path d="M11.9,22.221a2,2,0,0,1-1.933-2.487l.875-3.5a3.02,3.02,0,0,1,.788-1.393l8.8-8.8a1,1,0,0,1,1.414,0l4.243,4.242a1,1,0,0,1,0,1.414l-8.8,8.8a3,3,0,0,1-1.393.79h0l-3.5.875A2.027,2.027,0,0,1,11.9,22.221Zm3.752-1.907h0ZM21.141,8.159l-8.094,8.093a1,1,0,0,0-.262.465l-.876,3.5,3.5-.876a1,1,0,0,0,.464-.263l8.094-8.094Z"/>
@@ -84,8 +125,23 @@ function Account({ user, onLogout }) {
           <div className="profile-field">
             <div className="field-label-bold">Unternehmen:</div>
             <div className="field-row">
-              <span className="field-value">Aura Presence</span>
-              <button className="edit-icon-btn" onClick={() => handleEdit('company', 'Aura Presence')}>
+              <span className="field-value">{user?.company || 'Nicht angegeben'}</span>
+              <button className="edit-icon-btn" onClick={() => handleEdit('company', user?.company || '')}>
+                <svg viewBox="0 0 32 32" fill="currentColor">
+                  <path d="M25.384,11.987a.993.993,0,0,1-.707-.293L20.434,7.452a1,1,0,0,1,0-1.414l2.122-2.121a3.07,3.07,0,0,1,4.242,0l1.414,1.414a3,3,0,0,1,0,4.242l-2.122,2.121A.993.993,0,0,1,25.384,11.987ZM22.555,6.745l2.829,2.828L26.8,8.159a1,1,0,0,0,0-1.414L25.384,5.331a1.023,1.023,0,0,0-1.414,0Z"/>
+                  <path d="M11.9,22.221a2,2,0,0,1-1.933-2.487l.875-3.5a3.02,3.02,0,0,1,.788-1.393l8.8-8.8a1,1,0,0,1,1.414,0l4.243,4.242a1,1,0,0,1,0,1.414l-8.8,8.8a3,3,0,0,1-1.393.79h0l-3.5.875A2.027,2.027,0,0,1,11.9,22.221Zm3.752-1.907h0ZM21.141,8.159l-8.094,8.093a1,1,0,0,0-.262.465l-.876,3.5,3.5-.876a1,1,0,0,0,.464-.263l8.094-8.094Z"/>
+                  <path d="M22,29H8a5.006,5.006,0,0,1-5-5V10A5.006,5.006,0,0,1,8,5h9.64a1,1,0,0,1,0,2H8a3,3,0,0,0-3,3V24a3,3,0,0,0,3,3H22a3,3,0,0,0,3-3V14.61a1,1,0,0,1,2,0V24A5.006,5.006,0,0,1,22,29Z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Land */}
+          <div className="profile-field">
+            <div className="field-label-bold">Land:</div>
+            <div className="field-row">
+              <span className="field-value">{user?.country || 'Nicht angegeben'}</span>
+              <button className="edit-icon-btn" onClick={() => handleEdit('country', user?.country || '')}>
                 <svg viewBox="0 0 32 32" fill="currentColor">
                   <path d="M25.384,11.987a.993.993,0,0,1-.707-.293L20.434,7.452a1,1,0,0,1,0-1.414l2.122-2.121a3.07,3.07,0,0,1,4.242,0l1.414,1.414a3,3,0,0,1,0,4.242l-2.122,2.121A.993.993,0,0,1,25.384,11.987ZM22.555,6.745l2.829,2.828L26.8,8.159a1,1,0,0,0,0-1.414L25.384,5.331a1.023,1.023,0,0,0-1.414,0Z"/>
                   <path d="M11.9,22.221a2,2,0,0,1-1.933-2.487l.875-3.5a3.02,3.02,0,0,1,.788-1.393l8.8-8.8a1,1,0,0,1,1.414,0l4.243,4.242a1,1,0,0,1,0,1.414l-8.8,8.8a3,3,0,0,1-1.393.79h0l-3.5.875A2.027,2.027,0,0,1,11.9,22.221Zm3.752-1.907h0ZM21.141,8.159l-8.094,8.093a1,1,0,0,0-.262.465l-.876,3.5,3.5-.876a1,1,0,0,0,.464-.263l8.094-8.094Z"/>
@@ -178,27 +234,77 @@ function Account({ user, onLogout }) {
             <h3 className="edit-modal-title">
               {editField === 'name' && 'Vor- und Nachname ändern'}
               {editField === 'company' && 'Unternehmen ändern'}
+              {editField === 'country' && 'Land ändern'}
               {editField === 'password' && 'Passwort ändern'}
             </h3>
             
-            <input
-              type={editField === 'password' ? 'password' : 'text'}
-              className="edit-modal-input"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              placeholder={
-                editField === 'name' ? 'Vor- und Nachname eingeben' :
-                editField === 'company' ? 'Unternehmen eingeben' :
-                'Neues Passwort eingeben'
-              }
-            />
+            {editField === 'country' ? (
+              <select
+                className="edit-modal-input"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+              >
+                <option value="">Wähle dein Land</option>
+                <option value="Deutschland">Deutschland</option>
+                <option value="Österreich">Österreich</option>
+                <option value="Schweiz">Schweiz</option>
+                <option value="Liechtenstein">Liechtenstein</option>
+                <option value="Luxemburg">Luxemburg</option>
+                <option value="">──────────────</option>
+                <option value="Belgien">Belgien</option>
+                <option value="Dänemark">Dänemark</option>
+                <option value="Finnland">Finnland</option>
+                <option value="Frankreich">Frankreich</option>
+                <option value="Griechenland">Griechenland</option>
+                <option value="Irland">Irland</option>
+                <option value="Italien">Italien</option>
+                <option value="Kroatien">Kroatien</option>
+                <option value="Niederlande">Niederlande</option>
+                <option value="Norwegen">Norwegen</option>
+                <option value="Polen">Polen</option>
+                <option value="Portugal">Portugal</option>
+                <option value="Schweden">Schweden</option>
+                <option value="Spanien">Spanien</option>
+                <option value="Tschechien">Tschechien</option>
+                <option value="Ungarn">Ungarn</option>
+                <option value="Vereinigtes Königreich">Vereinigtes Königreich</option>
+                <option value="">──────────────</option>
+                <option value="USA">USA</option>
+                <option value="Kanada">Kanada</option>
+                <option value="Australien">Australien</option>
+                <option value="Neuseeland">Neuseeland</option>
+                <option value="">──────────────</option>
+                <option value="Anderes">Anderes Land</option>
+              </select>
+            ) : (
+              <input
+                type={editField === 'password' ? 'password' : 'text'}
+                className="edit-modal-input"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                placeholder={
+                  editField === 'name' ? 'Vor- und Nachname eingeben' :
+                  editField === 'company' ? 'Unternehmen eingeben' :
+                  editField === 'country' ? 'Land eingeben' :
+                  'Neues Passwort eingeben'
+                }
+              />
+            )}
             
             <div className="edit-modal-actions">
-              <button className="edit-modal-btn cancel" onClick={handleCancelEdit}>
+              <button 
+                className="edit-modal-btn cancel" 
+                onClick={handleCancelEdit}
+                disabled={loading}
+              >
                 Abbrechen
               </button>
-              <button className="edit-modal-btn save" onClick={handleSaveEdit}>
-                Speichern
+              <button 
+                className="edit-modal-btn save" 
+                onClick={handleSaveEdit}
+                disabled={loading}
+              >
+                {loading ? 'Speichern...' : 'Speichern'}
               </button>
             </div>
           </div>

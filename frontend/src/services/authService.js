@@ -86,6 +86,16 @@ export function getToken() {
   return localStorage.getItem('token');
 }
 
+/**
+ * Profil aktualisieren
+ */
+export async function updateProfile(profileData) {
+  const response = await apiClient.put('/auth/profile', profileData);
+  
+  // Backend wrapped die Response in "data"
+  return response.data.data?.user || response.data.user;
+}
+
 
 
 

@@ -4,7 +4,7 @@
  */
 
 import express from 'express';
-import { createUser, findUserByEmail, verifyPassword, sanitizeUser } from '../models/User.js';
+import { createUser, findUserByEmail, verifyPassword, sanitizeUser, updateUserProfile } from '../models/User.js';
 import { generateToken, authenticateToken } from '../middleware/auth.js';
 import { validate, registerSchema, loginSchema } from '../middleware/validation.js';
 import { generateRefreshToken, findRefreshToken, revokeRefreshToken } from '../models/RefreshToken.js';
@@ -158,6 +158,48 @@ router.post('/logout', authenticateToken, asyncHandler(async (req, res) => {
   // Logout sollte immer erfolgreich sein (Client löscht Token)
   return sendSuccess(res, {
     message: 'Erfolgreich abgemeldet'
+  });
+}));
+
+/**
+ * PUT /api/auth/profile
+ * Profildaten aktualisieren (geschützte Route)
+ */
+router.put('/profile', authenticateToken, asyncHandler(async (req, res) => {
+  const { name, company, country } = req.body;
+  const userId = req.user.id;
+  
+  // Validierung
+  const updateData = {};
+  if (name !== undefined) {
+    if (name.length < 2 || name.length > 255) {
+      return sendError(res, 400, ERROR_CODES.VALIDATION_ERROR, 'Name muss zwischen 2 und 255 Zeichen lang sein.');
+    }
+    updateData.name = name;
+  }
+  
+  if (company !== undefined) {
+    if (company.length < 2 || company.length > 255) {
+      return sendError(res, 400, ERROR_CODES.VALIDATION_ERROR, 'Unternehmen muss zwischen 2 und 255 Zeichen lang sein.');
+    }
+    updateData.company = company;
+  }
+  
+  if (country !== undefined) {
+    if (country.length < 2 || country.length > 100) {
+      return sendError(res, 400, ERROR_CODES.VALIDATION_ERROR, 'Land muss zwischen 2 und 100 Zeichen lang sein.');
+    }
+    updateData.country = country;
+  }
+  
+  // Update durchführen
+  const updatedUser = await updateUserProfile(userId, updateData);
+  
+  logger.info(`Profile updated for user ${userId}`);
+  
+  return sendSuccess(res, {
+    message: 'Profil erfolgreich aktualisiert',
+    user: sanitizeUser(updatedUser)
   });
 }));
 
