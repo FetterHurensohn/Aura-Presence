@@ -6,12 +6,14 @@ import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../../services/authService';
 import { showSuccess } from '../../services/toastService';
+import { useTranslation } from '../../i18n/LanguageContext';
 import './Auth.css';
 
 function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   // Use refs for form values
   const emailRef = useRef(null);
@@ -29,7 +31,7 @@ function Login({ onLogin }) {
     
     if (!email || !password) {
       console.error('Validation failed:', { email: !!email, password: !!password });
-      setError('Bitte alle Felder ausfüllen');
+      setError(t('common.error'));
       return;
     }
     
@@ -40,7 +42,7 @@ function Login({ onLogin }) {
       const user = await login(email, password);
       console.log('✅ Login erfolgreich, User:', user);
       onLogin(user);
-      showSuccess('Erfolgreich angemeldet! Willkommen zurück.');
+      showSuccess(t('messages.loginSuccess'));
       navigate('/dashboard');
     } catch (err) {
       console.error('❌ Login-Fehler:', err);
@@ -49,7 +51,7 @@ function Login({ onLogin }) {
       // Show backend error message if available
       const errorMessage = err.response?.data?.message 
         || err.response?.data?.error 
-        || 'E-Mail oder Passwort ist falsch';
+        || t('common.error');
       
       setError(errorMessage);
     } finally {
@@ -78,7 +80,7 @@ function Login({ onLogin }) {
         <h1 className="auth-brand">Aura Presence</h1>
 
         {/* Title mit Gradient-Linie */}
-        <h2 className="auth-title">Anmelden</h2>
+        <h2 className="auth-title">{t('auth.login.title')}</h2>
 
         {/* Error Message */}
         {error && <div className="auth-error">{error}</div>}
@@ -86,7 +88,7 @@ function Login({ onLogin }) {
         {/* Form */}
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-input-group">
-            <label className="auth-label">E-Mail-Adresse</label>
+            <label className="auth-label">{t('auth.login.email')}</label>
             <input
               ref={emailRef}
               type="email"
@@ -97,7 +99,7 @@ function Login({ onLogin }) {
           </div>
 
           <div className="auth-input-group">
-            <label className="auth-label">Passwort</label>
+            <label className="auth-label">{t('auth.login.password')}</label>
             <input
               ref={passwordRef}
               type="password"
@@ -112,13 +114,13 @@ function Login({ onLogin }) {
             className="auth-button primary"
             disabled={loading}
           >
-            {loading ? 'Wird angemeldet...' : 'Anmelden'}
+            {loading ? `${t('common.loading')}` : t('auth.login.button')}
           </button>
         </form>
 
         {/* Divider */}
         <div className="auth-divider">
-          <span>Oder</span>
+          <span>{t('common.or') || 'Oder'}</span>
         </div>
 
         {/* Social Buttons (Placeholder) */}
@@ -141,10 +143,10 @@ function Login({ onLogin }) {
 
         {/* Register Link */}
         <div className="auth-footer">
-          <span className="auth-footer-text">Noch nicht angemeldet?</span>
+          <span className="auth-footer-text">{t('auth.login.noAccount')}</span>
           {' '}
           <Link to="/register" className="auth-footer-link">
-            Registrieren
+            {t('auth.login.register')}
           </Link>
         </div>
 

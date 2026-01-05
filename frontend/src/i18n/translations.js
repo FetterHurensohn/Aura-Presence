@@ -133,7 +133,8 @@ export const translations = {
       edit: 'Bearbeiten',
       back: 'Zurück',
       next: 'Weiter',
-      close: 'Schließen'
+      close: 'Schließen',
+      or: 'Oder'
     },
     
     // Messages
@@ -278,7 +279,8 @@ export const translations = {
       edit: 'Edit',
       back: 'Back',
       next: 'Next',
-      close: 'Close'
+      close: 'Close',
+      or: 'Or'
     },
     
     // Messages

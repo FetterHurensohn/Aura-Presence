@@ -6,12 +6,14 @@ import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { register } from '../../services/authService';
 import { showSuccess } from '../../services/toastService';
+import { useTranslation } from '../../i18n/LanguageContext';
 import './Auth.css';
 
 function Register({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { t } = useTranslation();
   
   // Use refs for form values
   const emailRef = useRef(null);
@@ -33,27 +35,27 @@ function Register({ onLogin }) {
     const country = countryRef.current?.value || '';
     
     if (!email || !password || !confirmPassword || !name || !company || !country) {
-      setError('Bitte alle Felder ausfüllen');
+      setError(t('common.error'));
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(email)) {
-      setError('Ungültige E-Mail-Adresse');
+      setError(t('common.error'));
       return;
     }
     
     if (password.length < 8) {
-      setError('Passwort muss mindestens 8 Zeichen lang sein');
+      setError(t('auth.register.passwordRequirements'));
       return;
     }
 
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      setError('Passwort muss Groß-, Kleinbuchstaben und Zahl enthalten');
+      setError(t('auth.register.passwordRequirements'));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwörter stimmen nicht überein');
+      setError(t('common.error'));
       return;
     }
     
@@ -63,10 +65,10 @@ function Register({ onLogin }) {
     try {
       const user = await register(email, password, name, company, country);
       onLogin(user);
-      showSuccess('Erfolgreich registriert! Willkommen bei Aura Presence.');
+      showSuccess(t('messages.registerSuccess'));
       navigate('/onboarding');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registrierung fehlgeschlagen. Bitte versuche es erneut.');
+      setError(err.response?.data?.message || t('common.error'));
       console.error('Registrierungs-Fehler:', err);
     } finally {
       setLoading(false);
@@ -94,7 +96,7 @@ function Register({ onLogin }) {
         <h1 className="auth-brand">Aura Presence</h1>
 
         {/* Title mit Gradient-Linie */}
-        <h2 className="auth-title">Registrieren</h2>
+        <h2 className="auth-title">{t('auth.register.title')}</h2>
 
         {/* Error Message */}
         {error && <div className="auth-error">{error}</div>}
@@ -102,43 +104,40 @@ function Register({ onLogin }) {
         {/* Form */}
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="auth-input-group">
-            <label className="auth-label">Name</label>
+            <label className="auth-label">{t('auth.register.name')}</label>
             <input
               ref={nameRef}
               type="text"
               className="auth-input"
               disabled={loading}
               autoComplete="name"
-              placeholder="Dein vollständiger Name"
             />
           </div>
 
           <div className="auth-input-group">
-            <label className="auth-label">E-Mail-Adresse</label>
+            <label className="auth-label">{t('auth.register.email')}</label>
             <input
               ref={emailRef}
               type="email"
               className="auth-input"
               disabled={loading}
               autoComplete="email"
-              placeholder="deine@email.com"
             />
           </div>
 
           <div className="auth-input-group">
-            <label className="auth-label">Unternehmen</label>
+            <label className="auth-label">{t('auth.register.company')}</label>
             <input
               ref={companyRef}
               type="text"
               className="auth-input"
               disabled={loading}
               autoComplete="organization"
-              placeholder="Dein Unternehmen"
             />
           </div>
 
           <div className="auth-input-group">
-            <label className="auth-label">Land</label>
+            <label className="auth-label">{t('auth.register.country')}</label>
             <select
               ref={countryRef}
               className="auth-input"
@@ -146,7 +145,7 @@ function Register({ onLogin }) {
               autoComplete="country"
               defaultValue=""
             >
-              <option value="" disabled>Wähle dein Land</option>
+              <option value="" disabled>{t('auth.register.selectCountry')}</option>
               <option value="Deutschland">Deutschland</option>
               <option value="Österreich">Österreich</option>
               <option value="Schweiz">Schweiz</option>
@@ -181,26 +180,24 @@ function Register({ onLogin }) {
           </div>
 
           <div className="auth-input-group">
-            <label className="auth-label">Passwort</label>
+            <label className="auth-label">{t('auth.register.password')}</label>
             <input
               ref={passwordRef}
               type="password"
               className="auth-input"
               disabled={loading}
               autoComplete="new-password"
-              placeholder="Mind. 8 Zeichen, Groß-/Kleinbuchstaben + Zahl"
             />
           </div>
 
           <div className="auth-input-group">
-            <label className="auth-label">Passwort bestätigen</label>
+            <label className="auth-label">{t('auth.register.confirmPassword')}</label>
             <input
               ref={confirmPasswordRef}
               type="password"
               className="auth-input"
               disabled={loading}
               autoComplete="new-password"
-              placeholder="Passwort wiederholen"
             />
           </div>
 
@@ -209,13 +206,13 @@ function Register({ onLogin }) {
             className="auth-button primary"
             disabled={loading}
           >
-            {loading ? 'Wird registriert...' : 'Registrieren'}
+            {loading ? `${t('common.loading')}` : t('auth.register.button')}
           </button>
         </form>
 
         {/* Divider */}
         <div className="auth-divider">
-          <span>Oder</span>
+          <span>{t('common.or') || 'Oder'}</span>
         </div>
 
         {/* Social Buttons (Placeholder) */}
@@ -238,10 +235,10 @@ function Register({ onLogin }) {
 
         {/* Login Link */}
         <div className="auth-footer">
-          <span className="auth-footer-text">Bereits registriert?</span>
+          <span className="auth-footer-text">{t('auth.register.hasAccount')}</span>
           {' '}
           <Link to="/login" className="auth-footer-link">
-            Anmelden
+            {t('auth.register.login')}
           </Link>
         </div>
 
