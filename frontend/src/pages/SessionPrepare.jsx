@@ -21,43 +21,158 @@ function SessionPrepare({ user }) {
   }, []);
 
   const checkDevices = async () => {
-    try {
-      // Flexible constraints für Device-Check
-      const constraints = {
+    // Multi-Step Fallback: Verschiedene Constraint-Level ausprobieren
+    const constraintLevels = [
+      // Level 1: Minimal (höchste Kompatibilität)
+      {
+        video: true,
+        audio: true
+      },
+      // Level 2: Basic mit facingMode
+      {
+        video: { facingMode: 'user' },
+        audio: true
+      },
+      // Level 3: Mit idealen Dimensionen
+      {
         video: {
           width: { ideal: 640 },
           height: { ideal: 480 },
           facingMode: 'user'
         },
         audio: {
-          echoCancellation: true
+          echoCancellation: true,
+          noiseSuppression: true
         }
-      };
-      
-      console.log('🔍 Checking devices with constraints:', constraints);
-      
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      console.log('✅ Devices found:', {
-        video: stream.getVideoTracks().length > 0,
-        audio: stream.getAudioTracks().length > 0
-      });
-      
-      setCameraStatus(true);
-      setMicrophoneStatus(true);
-      
-      // Stop stream immediately (just checking)
-      stream.getTracks().forEach(track => track.stop());
-    } catch (err) {
-      console.error('❌ Device access error:', err.name, err.message);
-      
-      if (err.name === 'NotFoundError') {
-        console.warn('⚠️ No camera/microphone found');
       }
+    ];
+
+    let lastError = null;
+    
+    // Versuche alle Constraint-Level
+    for (let i = 0; i < constraintLevels.length; i++) {
+      const constraints = constraintLevels[i];
       
-      setCameraStatus(false);
-      setMicrophoneStatus(false);
+      try {
+        console.log(`🔍 Versuche Device-Check (Level ${i + 1}/${constraintLevels.length}):`, constraints);
+        
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        console.log('✅ Devices gefunden:', {
+          video: stream.getVideoTracks().length > 0,
+          audio: stream.getAudioTracks().length > 0,
+          videoLabel: stream.getVideoTracks()[0]?.label || 'N/A',
+          audioLabel: stream.getAudioTracks()[0]?.label || 'N/A'
+        });
+        
+        setCameraStatus(stream.getVideoTracks().length > 0);
+        setMicrophoneStatus(stream.getAudioTracks().length > 0);
+        
+        // Stream sofort stoppen (nur Check)
+        stream.getTracks().forEach(track => track.stop());
+        
+        // Erfolgreich! Keine weiteren Versuche nötig
+        return;
+        
+      } catch (err) {
+        lastError = err;
+        console.warn(`⚠️ Level ${i + 1} fehlgeschlagen:`, err.name, err.message);
+        
+        // Beim letzten Level: Versuche einzeln (Video ODER Audio)
+        if (i === constraintLevels.length - 1) {
+          await checkDevicesSeparately();
+          return;
+        }
+        
+        // Sonst: Nächstes Level probieren
+        continue;
+      }
     }
+    
+    // Alle Level fehlgeschlagen
+    if (lastError) {
+      console.error('❌ Alle Device-Check-Versuche fehlgeschlagen:', lastError);
+      handleDeviceError(lastError);
+    }
+  };
+
+  // Fallback: Prüfe Video und Audio einzeln
+  const checkDevicesSeparately = async () => {
+    console.log('🔄 Versuche Video und Audio einzeln...');
+    
+    let hasVideo = false;
+    let hasAudio = false;
+    
+    // Versuche nur Video
+    try {
+      const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      hasVideo = videoStream.getVideoTracks().length > 0;
+      console.log('✅ Video gefunden:', videoStream.getVideoTracks()[0]?.label);
+      videoStream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      console.warn('⚠️ Video nicht verfügbar:', err.message);
+    }
+    
+    // Versuche nur Audio
+    try {
+      const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      hasAudio = audioStream.getAudioTracks().length > 0;
+      console.log('✅ Audio gefunden:', audioStream.getAudioTracks()[0]?.label);
+      audioStream.getTracks().forEach(track => track.stop());
+    } catch (err) {
+      console.warn('⚠️ Audio nicht verfügbar:', err.message);
+    }
+    
+    setCameraStatus(hasVideo);
+    setMicrophoneStatus(hasAudio);
+    
+    if (!hasVideo && !hasAudio) {
+      console.error('❌ Weder Video noch Audio verfügbar');
+    }
+  };
+
+  // Error Handling mit spezifischen Anleitungen
+  const handleDeviceError = (error) => {
+    setCameraStatus(false);
+    setMicrophoneStatus(false);
+    
+    let message = '';
+    
+    switch (error.name) {
+      case 'NotFoundError':
+        message = '❌ Keine Kamera/Mikrofon gefunden!\n\n' +
+                  '📋 Prüfe:\n' +
+                  '1. Ist eine Kamera angeschlossen?\n' +
+                  '2. Kamera-Treiber installiert?\n' +
+                  '3. Wird Kamera von anderer App verwendet?\n' +
+                  '4. Browser neu starten';
+        break;
+      case 'NotAllowedError':
+        message = '🚫 Zugriff verweigert!\n\n' +
+                  '📋 Lösung:\n' +
+                  '1. Erlaube Kamera/Mikrofon in Browser\n' +
+                  '2. Prüfe Browser-Einstellungen\n' +
+                  '3. Seite neu laden (Ctrl+Shift+R)';
+        break;
+      case 'NotReadableError':
+        message = '⚠️ Kamera bereits in Benutzung!\n\n' +
+                  '📋 Lösung:\n' +
+                  '1. Schließe andere Video-Apps\n' +
+                  '2. Schließe andere Browser-Tabs mit Kamera\n' +
+                  '3. Browser neu starten';
+        break;
+      case 'OverconstrainedError':
+        message = '⚙️ Kamera unterstützt Einstellungen nicht!\n\n' +
+                  '📋 Lösung:\n' +
+                  '1. Andere Kamera verwenden\n' +
+                  '2. Seite neu laden';
+        break;
+      default:
+        message = `❌ Fehler: ${error.name}\n\n` +
+                  'Bitte Browser neu starten oder anderen Browser verwenden.';
+    }
+    
+    console.error(message);
   };
 
   const handleFokusToggle = (index) => {

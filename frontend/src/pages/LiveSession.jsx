@@ -96,84 +96,203 @@ function LiveSession() {
       return;
     }
 
-    try {
-      setAiFeedback(['📹 Aktiviere Kamera...', '🎙️ Aktiviere Mikrofon...']);
-      
-      // Flexible constraints - lässt Browser beste Kamera/Mikrofon auswählen
-      const constraints = {
+    // Multi-Step Fallback: Verschiedene Constraint-Level ausprobieren
+    const constraintLevels = [
+      // Level 1: Minimal (höchste Kompatibilität)
+      {
+        video: true,
+        audio: true
+      },
+      // Level 2: Mit facingMode
+      {
+        video: { facingMode: 'user' },
+        audio: true
+      },
+      // Level 3: Mit idealen Dimensionen (Desktop-optimiert)
+      {
         video: {
           width: { ideal: 640, max: 1280 },
           height: { ideal: 480, max: 720 },
-          facingMode: 'user' // Front-facing camera preferred
+          facingMode: 'user'
         },
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true
         }
-      };
-      
-      console.log('🎥 Requesting camera access with constraints:', constraints);
-      
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      console.log('✅ Camera stream obtained:', {
-        videoTracks: stream.getVideoTracks().length,
-        audioTracks: stream.getAudioTracks().length
-      });
-      
-      streamRef.current = stream;
-      
+      }
+    ];
+
+    let lastError = null;
+
+    setAiFeedback(['📹 Aktiviere Kamera...', '🎙️ Aktiviere Mikrofon...']);
+
+    // Versuche alle Constraint-Level
+    for (let i = 0; i < constraintLevels.length; i++) {
+      const constraints = constraintLevels[i];
+
+      try {
+        console.log(`🎥 Kamera-Versuch ${i + 1}/${constraintLevels.length}:`, constraints);
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+        console.log('✅ Kamera-Stream erhalten:', {
+          videoTracks: stream.getVideoTracks().length,
+          audioTracks: stream.getAudioTracks().length,
+          videoLabel: stream.getVideoTracks()[0]?.label || 'N/A',
+          audioLabel: stream.getAudioTracks()[0]?.label || 'N/A'
+        });
+
+        streamRef.current = stream;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+
+          // Wait until video is ready
+          videoRef.current.onloadedmetadata = () => {
+            console.log('✅ Video metadata loaded, dimensions:', {
+              width: videoRef.current.videoWidth,
+              height: videoRef.current.videoHeight
+            });
+
+            setCameraOn(true);
+            setMicrophoneOn(true);
+            setAnalysisStarted(true);
+            setIsRecording(true);
+            initMediaPipe();
+          };
+        }
+
+        // Erfolgreich! Keine weiteren Versuche nötig
+        return;
+
+      } catch (err) {
+        lastError = err;
+        console.warn(`⚠️ Kamera-Versuch ${i + 1} fehlgeschlagen:`, err.name, err.message);
+
+        // Beim letzten Level: Versuche einzeln (Video ODER Audio)
+        if (i === constraintLevels.length - 1) {
+          await tryDevicesSeparately();
+          return;
+        }
+
+        // Sonst: Nächstes Level probieren
+        continue;
+      }
+    }
+
+    // Alle Level fehlgeschlagen
+    if (lastError) {
+      console.error('❌ Alle Kamera-Versuche fehlgeschlagen:', lastError);
+      handleCameraError(lastError);
+    }
+  };
+
+  // Fallback: Versuche Video und Audio einzeln
+  const tryDevicesSeparately = async () => {
+    console.log('🔄 Versuche Video und Audio einzeln...');
+
+    let videoStream = null;
+    let audioStream = null;
+
+    // Versuche nur Video
+    try {
+      videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      console.log('✅ Video-Stream erhalten');
+    } catch (err) {
+      console.warn('⚠️ Video nicht verfügbar:', err.message);
+    }
+
+    // Versuche nur Audio
+    try {
+      audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('✅ Audio-Stream erhalten');
+    } catch (err) {
+      console.warn('⚠️ Audio nicht verfügbar:', err.message);
+    }
+
+    // Kombiniere Streams wenn möglich
+    if (videoStream || audioStream) {
+      const combinedStream = new MediaStream();
+
+      if (videoStream) {
+        videoStream.getVideoTracks().forEach(track => combinedStream.addTrack(track));
+      }
+      if (audioStream) {
+        audioStream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
+      }
+
+      streamRef.current = combinedStream;
+
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        
-        // Wait until video is ready
+        videoRef.current.srcObject = combinedStream;
+
         videoRef.current.onloadedmetadata = () => {
-          console.log('✅ Video metadata loaded, dimensions:', {
-            width: videoRef.current.videoWidth,
-            height: videoRef.current.videoHeight
-          });
-          
-          setCameraOn(true);
-          setMicrophoneOn(true);
+          console.log('✅ Video ready (separate streams)');
+          setCameraOn(!!videoStream);
+          setMicrophoneOn(!!audioStream);
           setAnalysisStarted(true);
           setIsRecording(true);
           initMediaPipe();
         };
       }
-    } catch (err) {
-      console.error('❌ Camera access error:', err.name, err.message);
-      
-      let errorMessage = [];
-      
-      if (err.name === 'NotFoundError') {
-        errorMessage = [
-          '❌ Keine Kamera/Mikrofon gefunden!',
-          'Bitte Gerät anschließen',
-          'Oder andere Kamera wählen'
-        ];
-      } else if (err.name === 'NotAllowedError') {
-        errorMessage = [
-          '❌ Zugriff verweigert!',
-          'Bitte Berechtigung erteilen',
-          'Browser-Einstellungen prüfen'
-        ];
-      } else if (err.name === 'NotReadableError') {
-        errorMessage = [
-          '❌ Kamera wird bereits verwendet!',
-          'Andere App schließen',
-          'Seite neu laden'
-        ];
-      } else {
-        errorMessage = [
-          '❌ Fehler beim Kamera-Zugriff!',
-          `Fehler: ${err.name}`,
-          'Seite neu laden oder Support kontaktieren'
-        ];
-      }
-      
-      setAiFeedback(errorMessage);
+
+      setAiFeedback([
+        videoStream ? '✅ Kamera bereit!' : '⚠️ Kamera nicht verfügbar',
+        audioStream ? '✅ Mikrofon bereit!' : '⚠️ Mikrofon nicht verfügbar',
+        'MediaPipe wird geladen...'
+      ]);
+
+      return;
     }
+
+    // Nichts verfügbar
+    setAiFeedback([
+      '❌ Keine Kamera/Mikrofon gefunden!',
+      'Bitte Gerät anschließen',
+      'Oder Browser neu starten'
+    ]);
+  };
+
+  // Error Handling
+  const handleCameraError = (err) => {
+    console.error('❌ Camera access error:', err.name, err.message);
+
+    let errorMessage = [];
+
+    if (err.name === 'NotFoundError') {
+      errorMessage = [
+        '❌ Keine Kamera/Mikrofon gefunden!',
+        'Bitte Gerät anschließen',
+        'Treiber prüfen & Browser neu starten'
+      ];
+    } else if (err.name === 'NotAllowedError') {
+      errorMessage = [
+        '❌ Zugriff verweigert!',
+        'Bitte Berechtigung erteilen',
+        'Browser-Einstellungen prüfen'
+      ];
+    } else if (err.name === 'NotReadableError') {
+      errorMessage = [
+        '❌ Kamera wird bereits verwendet!',
+        'Andere App schließen',
+        'Seite neu laden'
+      ];
+    } else if (err.name === 'OverconstrainedError') {
+      errorMessage = [
+        '⚙️ Kamera unterstützt Einstellungen nicht!',
+        'Andere Kamera verwenden',
+        'Seite neu laden'
+      ];
+    } else {
+      errorMessage = [
+        '❌ Fehler beim Kamera-Zugriff!',
+        `Fehler: ${err.name}`,
+        'Seite neu laden oder Support kontaktieren'
+      ];
+    }
+
+    setAiFeedback(errorMessage);
   };
 
   // Stop camera completely
@@ -224,67 +343,8 @@ function LiveSession() {
 
   // Initialize camera when turned on
   const startCamera = async () => {
-    try {
-      setAiFeedback(['Starte Kamera...', 'Bitte warten...']);
-      
-      // Flexible constraints - lässt Browser beste Kamera/Mikrofon auswählen
-      const constraints = {
-        video: {
-          width: { ideal: 640, max: 1280 },
-          height: { ideal: 480, max: 720 },
-          facingMode: 'user'
-        },
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      };
-      
-      console.log('🎥 Starting camera with constraints:', constraints);
-      
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      console.log('✅ Camera stream obtained');
-      
-      streamRef.current = stream;
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        
-        // Warte bis Video bereit ist
-        videoRef.current.onloadedmetadata = async () => {
-          console.log('✅ Video ready:', {
-            width: videoRef.current.videoWidth,
-            height: videoRef.current.videoHeight
-          });
-          
-          setCameraReady(true);
-          setAiFeedback(['✅ Kamera bereit!', 'MediaPipe wird geladen...']);
-          
-          // Initialize MediaPipe
-          await initMediaPipe();
-        };
-      }
-    } catch (err) {
-      console.error('❌ Camera access error:', err.name, err.message);
-      
-      let errorMessage = [];
-      
-      if (err.name === 'NotFoundError') {
-        errorMessage = ['❌ Keine Kamera/Mikrofon gefunden!', 'Gerät anschließen oder prüfen'];
-      } else if (err.name === 'NotAllowedError') {
-        errorMessage = ['❌ Zugriff verweigert!', 'Berechtigung in Browser erteilen'];
-      } else if (err.name === 'NotReadableError') {
-        errorMessage = ['❌ Kamera bereits in Benutzung!', 'Andere App schließen'];
-      } else {
-        errorMessage = ['❌ Kamera-Fehler!', `${err.name}: ${err.message}`];
-      }
-      
-      setAiFeedback(errorMessage);
-      setCameraOn(false);
-      setMicrophoneOn(false);
-    }
+    // Use same logic as initializeCamera
+    await initializeCamera();
   };
 
   // Initialize MediaPipe
