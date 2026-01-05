@@ -1,77 +1,43 @@
-# Render Blueprint für Aura Presence
-# Automatisches Deployment von GitHub zu Render.com
-
 services:
-  # Backend Web Service (Node.js + Express + Socket.IO)
   - type: web
     name: aura-presence-backend
-    runtime: node
-    repo: https://github.com/FetterHurensohn/Aura-Presence
-    region: frankfurt  # EU Region (näher zu Deutschland)
+    env: node
+    region: frankfurt
+    plan: free
     branch: main
     rootDir: backend
     buildCommand: npm ci
     startCommand: npm start
-    plan: free  # Kostenloser Tier
-    
-    # Umgebungsvariablen
+    healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      
       - key: PORT
         value: 3000
-      
       - key: JWT_SECRET
-        generateValue: true  # Render generiert automatisch einen sicheren Wert
-      
+        generateValue: true
       - key: JWT_REFRESH_SECRET
         generateValue: true
-      
       - key: DATABASE_URL
         fromDatabase:
           name: aura-presence-db
           property: connectionString
-      
       - key: FRONTEND_URL
         value: https://aura-presence-analyser.vercel.app
-      
       - key: OPENAI_API_KEY
-        sync: false  # Muss manuell im Dashboard gesetzt werden (aus Sicherheitsgründen)
-      
+        sync: false
       - key: STRIPE_SECRET_KEY
-        sync: false  # Muss manuell gesetzt werden
-      
+        sync: false
       - key: STRIPE_WEBHOOK_SECRET
-        sync: false  # Muss manuell gesetzt werden
-      
+        sync: false
       - key: SENTRY_DSN
-        sync: false  # Optional
-    
-    # Health Check
-    healthCheckPath: /health
-    
-    # Auto-Deploy bei GitHub Push
-    autoDeploy: true
+        sync: false
 
 databases:
-  # PostgreSQL Datenbank
   - name: aura-presence-db
     databaseName: aura_presence
-    user: aura_presence_user
-    plan: free  # 500 MB Storage
+    user: aura_user
+    plan: free
     region: frankfurt
-    
-    # Nach Erstellung: Führe Migrationen aus
-    postCreateCommand: "echo 'Database created! Run migrations manually via Render Shell: npm run migrate'"
-
-# Hinweise für das Deployment:
-# 1. Pushe diese Datei zu GitHub
-# 2. Gehe zu render.com und erstelle einen Account
-# 3. Klicke auf "New" → "Blueprint"
-# 4. Verbinde dein GitHub Repository
-# 5. Render erstellt automatisch Backend + Datenbank
-# 6. Setze API Keys manuell im Dashboard (OPENAI_API_KEY, STRIPE_SECRET_KEY, etc.)
-# 7. Führe Migrationen aus: Gehe zu Backend Service → Shell → npm run migrate
-# 8. Aktualisiere Vercel Environment Variables mit neuer Render URL
 
