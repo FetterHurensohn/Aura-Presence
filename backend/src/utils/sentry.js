@@ -1,20 +1,32 @@
 /**
  * Sentry Error Tracking Integration
  * Konfiguriert Sentry für Backend Error-Monitoring
- * Updated für Sentry v10 API
+ * Optional - funktioniert auch ohne Sentry
  */
 
-import * as Sentry from '@sentry/node';
+let Sentry = null;
+
+// Dynamischer Import nur wenn Sentry installiert ist
+try {
+  Sentry = await import('@sentry/node');
+} catch (err) {
+  console.log('ℹ️  Sentry: Not installed (optional dependency)');
+}
 
 /**
  * Initialisiert Sentry mit Backend-Konfiguration
  */
 export function initSentry() {
+  if (!Sentry) {
+    console.log('ℹ️  Sentry: Deaktiviert (nicht installiert)');
+    return;
+  }
+
   const SENTRY_DSN = process.env.SENTRY_DSN;
   const NODE_ENV = process.env.NODE_ENV || 'development';
 
   // Nur in Production oder wenn explizit DSN gesetzt ist
-  if (!SENTRY_DSN) {
+  if (!SENTRY_DSN || SENTRY_DSN === 'none') {
     console.log('ℹ️  Sentry: Deaktiviert (keine DSN gesetzt)');
     return;
   }
