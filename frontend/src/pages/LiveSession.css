@@ -23,6 +23,18 @@
   z-index: 1;
 }
 
+/* MediaPipe Canvas Overlay - Zeigt Markierungslinien */
+.mediapipe-overlay {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important; /* Klicks durchlassen */
+  z-index: 2 !important; /* Über Video, aber unter UI */
+  object-fit: cover;
+}
+
 /* KI-Tutor Sprechblase - Oben Rechts */
 .ai-tutor-bubble {
   position: absolute;

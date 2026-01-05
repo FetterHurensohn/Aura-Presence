@@ -352,8 +352,18 @@ function LiveSession() {
     if (!featureExtractorRef.current || isPaused) return;
     
     try {
-      // ✨ VISUALISIERUNG: Canvas zeichnen
+      // ✨ VISUALISIERUNG: Canvas zeichnen (WICHTIG: ZUERST!)
       drawMediaPipeVisualization(results);
+      
+      // Debug: Log alle 60 Frames (~4 Sekunden bei 15 FPS)
+      if (Math.random() < 0.017) {
+        console.log('🎨 MediaPipe Visualization:', {
+          pose: !!results.pose?.poseLandmarks,
+          faceMesh: !!results.faceMesh?.multiFaceLandmarks,
+          hands: !!results.hands?.multiHandLandmarks,
+          canvasSize: canvasRef.current ? `${canvasRef.current.width}x${canvasRef.current.height}` : 'N/A'
+        });
+      }
       
       // Features extrahieren
       const features = featureExtractorRef.current.extractUnified(
@@ -402,12 +412,16 @@ function LiveSession() {
     const canvas = canvasRef.current;
     const video = videoRef.current;
     
-    if (!canvas || !video) return;
+    if (!canvas || !video) {
+      console.warn('⚠️ Canvas oder Video nicht verfügbar für Visualisierung');
+      return;
+    }
     
-    // Canvas-Größe an Video anpassen
+    // Canvas-Größe an Video anpassen (wichtig für korrekte Proportionen!)
     if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
+      console.log('📐 Canvas resized to:', canvas.width, 'x', canvas.height);
     }
     
     const ctx = canvas.getContext('2d');
@@ -415,85 +429,147 @@ function LiveSession() {
     // Canvas leeren (transparent für Video-Overlay)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // 1. POSE (Körperhaltung) - Lila/Türkis
-    if (results.pose?.poseLandmarks && window.drawConnectors) {
-      window.drawConnectors(ctx, results.pose.poseLandmarks, window.POSE_CONNECTIONS, {
-        color: '#0E7DB8', // Aura Presence Blau
-        lineWidth: 3
-      });
-      
-      window.drawLandmarks(ctx, results.pose.poseLandmarks, {
-        color: '#330B91', // Aura Presence Lila
-        lineWidth: 1,
-        radius: 4
-      });
+    // Prüfe, ob Drawing Utils verfügbar sind
+    if (!window.drawConnectors || !window.drawLandmarks) {
+      console.warn('⚠️ MediaPipe Drawing Utils nicht geladen!');
+      // Fallback: Zeichne manuell einfache Punkte
+      drawFallbackVisualization(ctx, results, canvas);
+      return;
+    }
+    
+    // 1. POSE (Körperhaltung) - Blau/Lila
+    if (results.pose?.poseLandmarks) {
+      try {
+        window.drawConnectors(ctx, results.pose.poseLandmarks, window.POSE_CONNECTIONS, {
+          color: '#0E7DB8', // Aura Presence Blau
+          lineWidth: 4
+        });
+        
+        window.drawLandmarks(ctx, results.pose.poseLandmarks, {
+          color: '#330B91', // Aura Presence Lila
+          fillColor: '#FFFFFF',
+          lineWidth: 2,
+          radius: 6
+        });
+      } catch (err) {
+        console.error('❌ Error drawing pose:', err);
+      }
     }
     
     // 2. FACE MESH (Gesicht) - Weiß/Grau
-    if (results.faceMesh?.multiFaceLandmarks && window.drawConnectors) {
-      results.faceMesh.multiFaceLandmarks.forEach(landmarks => {
-        // Face Tesselation (dezent, halbtransparent)
-        window.drawConnectors(ctx, landmarks, window.FACEMESH_TESSELATION, {
-          color: 'rgba(189, 189, 189, 0.3)', // #BDBDBD halbtransparent
-          lineWidth: 0.5
-        });
-        
-        // Augen (hervorgehoben)
-        window.drawConnectors(ctx, landmarks, window.FACEMESH_RIGHT_EYE, {
-          color: '#E08A00', // Orange für Aufmerksamkeit
-          lineWidth: 2
-        });
-        window.drawConnectors(ctx, landmarks, window.FACEMESH_LEFT_EYE, {
-          color: '#E08A00',
-          lineWidth: 2
-        });
-        
-        // Lippen
-        window.drawConnectors(ctx, landmarks, window.FACEMESH_LIPS, {
-          color: '#007A5A', // Grün
-          lineWidth: 2
-        });
-        
-        // Iris (wenn vorhanden)
-        if (landmarks.length > 468) {
-          const leftIris = landmarks.slice(468, 473);
-          const rightIris = landmarks.slice(473, 478);
-          
-          // Draw Iris Landmarks
-          leftIris.forEach(landmark => {
-            ctx.fillStyle = '#E08A00';
-            ctx.beginPath();
-            ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 2, 0, 2 * Math.PI);
-            ctx.fill();
+    if (results.faceMesh?.multiFaceLandmarks) {
+      try {
+        results.faceMesh.multiFaceLandmarks.forEach(landmarks => {
+          // Face Tesselation (dezent, halbtransparent)
+          window.drawConnectors(ctx, landmarks, window.FACEMESH_TESSELATION, {
+            color: 'rgba(224, 224, 224, 0.2)', // Sehr dezent
+            lineWidth: 0.5
           });
           
-          rightIris.forEach(landmark => {
-            ctx.fillStyle = '#E08A00';
-            ctx.beginPath();
-            ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 2, 0, 2 * Math.PI);
-            ctx.fill();
+          // Augen (hervorgehoben)
+          window.drawConnectors(ctx, landmarks, window.FACEMESH_RIGHT_EYE, {
+            color: '#E08A00', // Orange für Aufmerksamkeit
+            lineWidth: 3
           });
-        }
+          window.drawConnectors(ctx, landmarks, window.FACEMESH_LEFT_EYE, {
+            color: '#E08A00',
+            lineWidth: 3
+          });
+          
+          // Lippen
+          window.drawConnectors(ctx, landmarks, window.FACEMESH_LIPS, {
+            color: '#007A5A', // Grün
+            lineWidth: 3
+          });
+          
+          // Iris (wenn vorhanden)
+          if (landmarks.length > 468) {
+            const leftIris = landmarks.slice(468, 473);
+            const rightIris = landmarks.slice(473, 478);
+            
+            // Draw Iris Landmarks (Pupillen-Tracking)
+            leftIris.forEach(landmark => {
+              ctx.fillStyle = '#E08A00';
+              ctx.beginPath();
+              ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 3, 0, 2 * Math.PI);
+              ctx.fill();
+            });
+            
+            rightIris.forEach(landmark => {
+              ctx.fillStyle = '#E08A00';
+              ctx.beginPath();
+              ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 3, 0, 2 * Math.PI);
+              ctx.fill();
+            });
+          }
+        });
+      } catch (err) {
+        console.error('❌ Error drawing face mesh:', err);
+      }
+    }
+    
+    // 3. HANDS (Hände) - Rot/Blau je nach Hand
+    if (results.hands?.multiHandLandmarks) {
+      try {
+        results.hands.multiHandLandmarks.forEach((handLandmarks, index) => {
+          const handedness = results.hands.multiHandedness?.[index]?.label || 'Unknown';
+          const handColor = handedness === 'Left' ? '#C23B3B' : '#0E7DB8'; // Rot vs Blau
+          
+          // Hand Connections
+          window.drawConnectors(ctx, handLandmarks, window.HAND_CONNECTIONS, {
+            color: handColor,
+            lineWidth: 4
+          });
+          
+          // Hand Landmarks
+          window.drawLandmarks(ctx, handLandmarks, {
+            color: handColor,
+            fillColor: '#FFFFFF',
+            lineWidth: 2,
+            radius: 6
+          });
+        });
+      } catch (err) {
+        console.error('❌ Error drawing hands:', err);
+      }
+    }
+  };
+  
+  // Fallback: Manuelle Visualisierung falls Drawing Utils nicht verfügbar
+  const drawFallbackVisualization = (ctx, results, canvas) => {
+    // Einfache Punkte für Pose
+    if (results.pose?.poseLandmarks) {
+      results.pose.poseLandmarks.forEach(landmark => {
+        ctx.fillStyle = '#0E7DB8';
+        ctx.beginPath();
+        ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 4, 0, 2 * Math.PI);
+        ctx.fill();
       });
     }
     
-    // 3. HANDS (Hände) - Rot/Cyan je nach Hand
-    if (results.hands?.multiHandLandmarks && window.drawConnectors) {
-      results.hands.multiHandLandmarks.forEach((handLandmarks, index) => {
-        const handedness = results.hands.multiHandedness?.[index]?.label || 'Unknown';
-        const handColor = handedness === 'Left' ? '#C23B3B' : '#0E7DB8'; // Rot vs Blau
-        
-        // Hand Connections
-        window.drawConnectors(ctx, handLandmarks, window.HAND_CONNECTIONS, {
-          color: handColor,
-          lineWidth: 3
+    // Einfache Punkte für Face Mesh (nur wichtige Landmarks)
+    if (results.faceMesh?.multiFaceLandmarks) {
+      results.faceMesh.multiFaceLandmarks.forEach(landmarks => {
+        // Nur jedes 5. Landmark zeichnen (für Performance)
+        landmarks.forEach((landmark, i) => {
+          if (i % 5 === 0) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 2, 0, 2 * Math.PI);
+            ctx.fill();
+          }
         });
-        
-        // Hand Landmarks
-        window.drawLandmarks(ctx, handLandmarks, {
-          color: handColor,
-          lineWidth: 1,
-          radius: 5
+      });
+    }
+    
+    // Einfache Punkte für Hands
+    if (results.hands?.multiHandLandmarks) {
+      results.hands.multiHandLandmarks.forEach(handLandmarks => {
+        handLandmarks.forEach(landmark => {
+          ctx.fillStyle = '#C23B3B';
+          ctx.beginPath();
+          ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 4, 0, 2 * Math.PI);
+          ctx.fill();
         });
       });
     }
@@ -701,33 +777,43 @@ function LiveSession() {
       <canvas 
         ref={canvasRef}
         className="mediapipe-overlay"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          pointerEvents: 'none', // Klicks durchlassen
-          zIndex: 1 // Über Video, aber unter UI-Elementen
-        }}
-        width="640"
-        height="480"
       />
 
-      {/* MediaPipe Status Indicator */}
+      {/* MediaPipe Status Indicator - Zeigt, dass Tracking aktiv ist */}
       {mediaPipeInitialized && (
         <div style={{
           position: 'absolute',
-          top: '10px',
-          left: '10px',
-          background: 'rgba(0, 200, 0, 0.8)',
+          top: '15px',
+          left: '15px',
+          background: 'linear-gradient(90deg, rgba(14, 124, 184, 1) 0%, rgba(51, 11, 145, 1) 100%)',
           color: 'white',
-          padding: '5px 10px',
-          borderRadius: '5px',
-          fontSize: '12px',
-          fontWeight: 'bold'
+          padding: '8px 16px',
+          borderRadius: '8px',
+          fontSize: '13px',
+          fontWeight: 'bold',
+          fontFamily: 'Roboto, sans-serif',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          zIndex: 10
         }}>
-          🎥 MediaPipe Active
+          <div style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: '#00FF00',
+            animation: 'pulse 2s infinite'
+          }}></div>
+          MediaPipe Tracking
+          <style>
+            {`
+              @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.4; }
+              }
+            `}
+          </style>
         </div>
       )}
 
