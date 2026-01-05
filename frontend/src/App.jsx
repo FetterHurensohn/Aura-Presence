@@ -40,6 +40,14 @@ function App() {
     const checkAuth = async () => {
       try {
         const currentUser = await getCurrentUser();
+        
+        // WORKAROUND: Merge mit lokal gespeicherter Sprache (bis Backend deployed)
+        const localLanguage = localStorage.getItem('userLanguage');
+        if (localLanguage) {
+          console.log(`🌐 Loading local language: ${localLanguage}`);
+          currentUser.language = localLanguage;
+        }
+        
         setUser(currentUser);
       } catch (error) {
         console.log('Nicht eingeloggt');
