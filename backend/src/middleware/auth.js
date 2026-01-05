@@ -35,7 +35,7 @@ function extractToken(req) {
 /**
  * Middleware zum Überprüfen der JWT-Authentifizierung
  */
-export function authenticateToken(req, res, next) {
+export async function authenticateToken(req, res, next) {
   const token = extractToken(req);
   
   if (!token) {
@@ -49,8 +49,12 @@ export function authenticateToken(req, res, next) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     
+    logger.info(`🔐 Token decoded:`, { userId: decoded.userId, email: decoded.email });
+    
     // Benutzer aus Datenbank laden
-    const user = findUserById(decoded.userId);
+    const user = await findUserById(decoded.userId);
+    
+    logger.info(`👤 User loaded from DB:`, user ? { id: user.id, email: user.email } : 'null');
     
     if (!user) {
       return res.status(401).json({
@@ -63,6 +67,8 @@ export function authenticateToken(req, res, next) {
     // Benutzer-Objekt ohne Passwort-Hash an Request anhängen
     const { password_hash, ...userWithoutPassword } = user;
     req.user = userWithoutPassword;
+    
+    logger.info(`✅ req.user set:`, { id: req.user.id, email: req.user.email });
     
     next();
   } catch (error) {
