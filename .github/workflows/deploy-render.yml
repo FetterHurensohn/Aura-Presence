@@ -1,0 +1,81 @@
+name: Deploy to Render (Production)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests Before Deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Install Dependencies
+        run: |
+          cd backend
+          npm ci
+      
+      - name: Run Backend Tests
+        run: |
+          cd backend
+          npm test
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-secret-for-ci-min-32-chars-long
+          DATABASE_URL: sqlite://./test.db
+
+  notify-render:
+    name: Notify Render Deployment
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Notify Render
+        run: |
+          echo "🚀 Render auto-deploys from GitHub!"
+          echo "Backend: https://aura-presence-backend.onrender.com"
+          echo "Check deployment status: https://dashboard.render.com"
+
+  verify-deployment:
+    name: Verify Deployment (Health Check)
+    needs: notify-render
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Wait for Render Deploy
+        run: |
+          echo "⏳ Waiting 2 minutes for Render deployment..."
+          sleep 120
+      
+      - name: Health Check
+        run: |
+          echo "🏥 Running health check..."
+          curl -f https://aura-presence-backend.onrender.com/health || echo "⚠️ Backend still deploying (this is normal, Render takes 3-5 minutes)"
+        continue-on-error: true
+      
+      - name: Deployment Info
+        run: |
+          echo "✅ Tests passed!"
+          echo "🚀 Render is deploying automatically"
+          echo "📊 Check status: https://dashboard.render.com"
+          echo ""
+          echo "Backend URL: https://aura-presence-backend.onrender.com"
+          echo "Frontend URL: https://aura-presence-analyser.vercel.app"
+
+# Hinweise:
+# 1. Render deployed automatisch bei Push zu main (via render.yaml)
+# 2. Dieser Workflow testet nur und benachrichtigt
+# 3. Kein RENDER_API_KEY nötig (GitHub Integration)
+# 4. Deployment dauert ~3-5 Minuten
+

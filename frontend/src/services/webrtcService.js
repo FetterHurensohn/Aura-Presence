@@ -68,7 +68,7 @@ class WebRTCService {
 
     const serverUrl = import.meta.env.VITE_BACKEND_URL 
       || (import.meta.env.PROD 
-          ? 'https://aura-presence-backend-production.up.railway.app'
+          ? 'https://aura-presence-backend.onrender.com'  // Render.com Production
           : 'http://localhost:3001');
     
     this.socket = io(serverUrl, {
