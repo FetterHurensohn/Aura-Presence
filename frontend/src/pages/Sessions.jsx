@@ -5,10 +5,12 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '../i18n/LanguageContext';
 import './Sessions.css';
 
 function Sessions({ user }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [visibleSessions, setVisibleSessions] = useState(5);
 
   // Mock Data - 10 Sessions
@@ -48,7 +50,7 @@ function Sessions({ user }) {
       {/* Content */}
       <div className="sessions-content-new">
         {/* Titel */}
-        <h1 className="sessions-title-new">Sessions</h1>
+        <h1 className="sessions-title-new">{t('history.title')}</h1>
 
         {/* Session Cards */}
         <div className="sessions-list-new">
@@ -57,7 +59,7 @@ function Sessions({ user }) {
               {/* Zeile 1: Info + Thumbnail */}
               <div className="session-row-1">
                 <div className="session-text">
-                  <div className="session-title-text">Letzte Sitzung</div>
+                  <div className="session-title-text">{t('history.lastSession')}</div>
                   <div className="session-date-text">{session.date}</div>
                   <div className="session-type-text">{session.type}</div>
                 </div>
@@ -68,25 +70,25 @@ function Sessions({ user }) {
               <div className="session-row-2">
                 <div className="session-col-1">
                   <div className="session-metric">
-                    <span>Augenkontakt:</span>
+                    <span>{t('history.eyeContact')}:</span>
                     <span className="session-val">{session.metrics.augenkontakt}</span>
                   </div>
                   <div className="session-metric">
-                    <span>Gestik:</span>
+                    <span>{t('history.gestures')}:</span>
                     <span className="session-val">{session.metrics.gestik}</span>
                   </div>
                   <div className="session-metric">
-                    <span>Mimik:</span>
+                    <span>{t('history.facial')}:</span>
                     <span className="session-val">{session.metrics.mimik}</span>
                   </div>
                 </div>
                 <div className="session-col-2">
                   <div className="session-metric">
-                    <span>Inhalt:</span>
+                    <span>{t('history.content')}:</span>
                     <span className="session-val">{session.metrics.inhalt}</span>
                   </div>
                   <div className="session-metric">
-                    <span>Stimme:</span>
+                    <span>{t('history.voice')}:</span>
                     <span className="session-val">{session.metrics.stimme}</span>
                   </div>
                 </div>
@@ -98,7 +100,7 @@ function Sessions({ user }) {
                   className="session-details" 
                   onClick={() => navigate(`/session/${session.id}`)}
                 >
-                  Details ansehen
+                  {t('history.viewDetails')}
                 </button>
               </div>
             </div>
@@ -109,7 +111,7 @@ function Sessions({ user }) {
         {visibleSessions < allSessions.length && (
           <div className="sessions-load-more">
             <button className="load-more-btn" onClick={loadMore}>
-              <span>Mehr Laden</span>
+              <span>{t('history.loadMore')}</span>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M7 10l5 5 5-5z"/>
               </svg>

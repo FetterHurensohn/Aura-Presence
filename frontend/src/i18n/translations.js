@@ -56,16 +56,21 @@ export const translations = {
     
     // History Page
     history: {
-      title: 'Aufnahme-Verlauf',
+      title: 'Sessions',
+      lastSession: 'Letzte Sitzung',
       noSessions: 'Keine Aufnahmen vorhanden',
       date: 'Datum',
       duration: 'Dauer',
       score: 'Bewertung',
       view: 'Ansehen',
       delete: 'Löschen',
-      eyeContact: 'Blickkontakt',
+      eyeContact: 'Augenkontakt',
       facial: 'Mimik',
-      gestures: 'Gestik'
+      gestures: 'Gestik',
+      content: 'Inhalt',
+      voice: 'Stimme',
+      viewDetails: 'Details ansehen',
+      loadMore: 'Mehr Laden'
     },
     
     // Account Page
@@ -202,7 +207,8 @@ export const translations = {
     
     // History Page
     history: {
-      title: 'Recording History',
+      title: 'Sessions',
+      lastSession: 'Last Session',
       noSessions: 'No recordings available',
       date: 'Date',
       duration: 'Duration',
@@ -210,8 +216,12 @@ export const translations = {
       view: 'View',
       delete: 'Delete',
       eyeContact: 'Eye Contact',
-      facial: 'Facial',
-      gestures: 'Gestures'
+      facial: 'Facial Expression',
+      gestures: 'Gestures',
+      content: 'Content',
+      voice: 'Voice',
+      viewDetails: 'View Details',
+      loadMore: 'Load More'
     },
     
     // Account Page
@@ -348,7 +358,8 @@ export const translations = {
     
     // History Page
     history: {
-      title: 'Historique des enregistrements',
+      title: 'Sessions',
+      lastSession: 'Dernière session',
       noSessions: 'Aucun enregistrement disponible',
       date: 'Date',
       duration: 'Durée',
@@ -356,8 +367,12 @@ export const translations = {
       view: 'Voir',
       delete: 'Supprimer',
       eyeContact: 'Contact visuel',
-      facial: 'Facial',
-      gestures: 'Gestes'
+      facial: 'Expression faciale',
+      gestures: 'Gestes',
+      content: 'Contenu',
+      voice: 'Voix',
+      viewDetails: 'Voir les détails',
+      loadMore: 'Charger plus'
     },
     
     // Account Page
@@ -493,7 +508,8 @@ export const translations = {
     
     // History Page
     history: {
-      title: 'Historial de grabaciones',
+      title: 'Sesiones',
+      lastSession: 'Última sesión',
       noSessions: 'No hay grabaciones disponibles',
       date: 'Fecha',
       duration: 'Duración',
@@ -501,8 +517,12 @@ export const translations = {
       view: 'Ver',
       delete: 'Eliminar',
       eyeContact: 'Contacto visual',
-      facial: 'Facial',
-      gestures: 'Gestos'
+      facial: 'Expresión facial',
+      gestures: 'Gestos',
+      content: 'Contenido',
+      voice: 'Voz',
+      viewDetails: 'Ver detalles',
+      loadMore: 'Cargar más'
     },
     
     // Account Page
@@ -638,7 +658,8 @@ export const translations = {
     
     // History Page
     history: {
-      title: 'Cronologia registrazioni',
+      title: 'Sessioni',
+      lastSession: 'Ultima sessione',
       noSessions: 'Nessuna registrazione disponibile',
       date: 'Data',
       duration: 'Durata',
@@ -646,8 +667,12 @@ export const translations = {
       view: 'Visualizza',
       delete: 'Elimina',
       eyeContact: 'Contatto visivo',
-      facial: 'Facciale',
-      gestures: 'Gesti'
+      facial: 'Espressione facciale',
+      gestures: 'Gesti',
+      content: 'Contenuto',
+      voice: 'Voce',
+      viewDetails: 'Visualizza dettagli',
+      loadMore: 'Carica altro'
     },
     
     // Account Page

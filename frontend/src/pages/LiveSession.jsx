@@ -55,6 +55,33 @@ function LiveSession() {
     return () => clearInterval(interval);
   }, [isRecording, isPaused, cameraOn]);
 
+  // Check available devices on mount (for debugging)
+  useEffect(() => {
+    const checkDevices = async () => {
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+        const audioDevices = devices.filter(d => d.kind === 'audioinput');
+        
+        console.log('🎥 Available video devices:', videoDevices.length, videoDevices.map(d => d.label || 'Unnamed'));
+        console.log('🎙️ Available audio devices:', audioDevices.length, audioDevices.map(d => d.label || 'Unnamed'));
+        
+        if (videoDevices.length === 0) {
+          console.warn('⚠️ No video input devices found!');
+          setAiFeedback(['⚠️ Keine Kamera erkannt!', 'Bitte Kamera anschließen']);
+        }
+        
+        if (audioDevices.length === 0) {
+          console.warn('⚠️ No audio input devices found!');
+        }
+      } catch (err) {
+        console.error('❌ Error enumerating devices:', err);
+      }
+    };
+    
+    checkDevices();
+  }, []);
+
   // Format time as MM:SS
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
@@ -72,9 +99,27 @@ function LiveSession() {
     try {
       setAiFeedback(['📹 Aktiviere Kamera...', '🎙️ Aktiviere Mikrofon...']);
       
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 640, height: 480 }, 
-        audio: true 
+      // Flexible constraints - lässt Browser beste Kamera/Mikrofon auswählen
+      const constraints = {
+        video: {
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
+          facingMode: 'user' // Front-facing camera preferred
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      };
+      
+      console.log('🎥 Requesting camera access with constraints:', constraints);
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      console.log('✅ Camera stream obtained:', {
+        videoTracks: stream.getVideoTracks().length,
+        audioTracks: stream.getAudioTracks().length
       });
       
       streamRef.current = stream;
@@ -84,6 +129,11 @@ function LiveSession() {
         
         // Wait until video is ready
         videoRef.current.onloadedmetadata = () => {
+          console.log('✅ Video metadata loaded, dimensions:', {
+            width: videoRef.current.videoWidth,
+            height: videoRef.current.videoHeight
+          });
+          
           setCameraOn(true);
           setMicrophoneOn(true);
           setAnalysisStarted(true);
@@ -92,12 +142,37 @@ function LiveSession() {
         };
       }
     } catch (err) {
-      console.error('Camera access error:', err);
-      setAiFeedback([
-        '❌ Kamera-Zugriff verweigert!', 
-        'Bitte Berechtigung erteilen',
-        'Seite neu laden'
-      ]);
+      console.error('❌ Camera access error:', err.name, err.message);
+      
+      let errorMessage = [];
+      
+      if (err.name === 'NotFoundError') {
+        errorMessage = [
+          '❌ Keine Kamera/Mikrofon gefunden!',
+          'Bitte Gerät anschließen',
+          'Oder andere Kamera wählen'
+        ];
+      } else if (err.name === 'NotAllowedError') {
+        errorMessage = [
+          '❌ Zugriff verweigert!',
+          'Bitte Berechtigung erteilen',
+          'Browser-Einstellungen prüfen'
+        ];
+      } else if (err.name === 'NotReadableError') {
+        errorMessage = [
+          '❌ Kamera wird bereits verwendet!',
+          'Andere App schließen',
+          'Seite neu laden'
+        ];
+      } else {
+        errorMessage = [
+          '❌ Fehler beim Kamera-Zugriff!',
+          `Fehler: ${err.name}`,
+          'Seite neu laden oder Support kontaktieren'
+        ];
+      }
+      
+      setAiFeedback(errorMessage);
     }
   };
 
@@ -152,10 +227,25 @@ function LiveSession() {
     try {
       setAiFeedback(['Starte Kamera...', 'Bitte warten...']);
       
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: 640, height: 480 }, 
-        audio: true 
-      });
+      // Flexible constraints - lässt Browser beste Kamera/Mikrofon auswählen
+      const constraints = {
+        video: {
+          width: { ideal: 640, max: 1280 },
+          height: { ideal: 480, max: 720 },
+          facingMode: 'user'
+        },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      };
+      
+      console.log('🎥 Starting camera with constraints:', constraints);
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      console.log('✅ Camera stream obtained');
       
       streamRef.current = stream;
       
@@ -164,6 +254,11 @@ function LiveSession() {
         
         // Warte bis Video bereit ist
         videoRef.current.onloadedmetadata = async () => {
+          console.log('✅ Video ready:', {
+            width: videoRef.current.videoWidth,
+            height: videoRef.current.videoHeight
+          });
+          
           setCameraReady(true);
           setAiFeedback(['✅ Kamera bereit!', 'MediaPipe wird geladen...']);
           
@@ -172,8 +267,21 @@ function LiveSession() {
         };
       }
     } catch (err) {
-      console.error('Camera access error:', err);
-      setAiFeedback(['❌ Kamera-Zugriff verweigert!', 'Bitte Berechtigung erteilen']);
+      console.error('❌ Camera access error:', err.name, err.message);
+      
+      let errorMessage = [];
+      
+      if (err.name === 'NotFoundError') {
+        errorMessage = ['❌ Keine Kamera/Mikrofon gefunden!', 'Gerät anschließen oder prüfen'];
+      } else if (err.name === 'NotAllowedError') {
+        errorMessage = ['❌ Zugriff verweigert!', 'Berechtigung in Browser erteilen'];
+      } else if (err.name === 'NotReadableError') {
+        errorMessage = ['❌ Kamera bereits in Benutzung!', 'Andere App schließen'];
+      } else {
+        errorMessage = ['❌ Kamera-Fehler!', `${err.name}: ${err.message}`];
+      }
+      
+      setAiFeedback(errorMessage);
       setCameraOn(false);
       setMicrophoneOn(false);
     }
@@ -244,6 +352,9 @@ function LiveSession() {
     if (!featureExtractorRef.current || isPaused) return;
     
     try {
+      // ✨ VISUALISIERUNG: Canvas zeichnen
+      drawMediaPipeVisualization(results);
+      
       // Features extrahieren
       const features = featureExtractorRef.current.extractUnified(
         results.pose,
@@ -283,6 +394,108 @@ function LiveSession() {
       
     } catch (error) {
       console.error('Error handling MediaPipe results:', error);
+    }
+  };
+
+  // ✨ MediaPipe Visualisierung auf Canvas zeichnen
+  const drawMediaPipeVisualization = (results) => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    
+    if (!canvas || !video) return;
+    
+    // Canvas-Größe an Video anpassen
+    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Canvas leeren (transparent für Video-Overlay)
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // 1. POSE (Körperhaltung) - Lila/Türkis
+    if (results.pose?.poseLandmarks && window.drawConnectors) {
+      window.drawConnectors(ctx, results.pose.poseLandmarks, window.POSE_CONNECTIONS, {
+        color: '#0E7DB8', // Aura Presence Blau
+        lineWidth: 3
+      });
+      
+      window.drawLandmarks(ctx, results.pose.poseLandmarks, {
+        color: '#330B91', // Aura Presence Lila
+        lineWidth: 1,
+        radius: 4
+      });
+    }
+    
+    // 2. FACE MESH (Gesicht) - Weiß/Grau
+    if (results.faceMesh?.multiFaceLandmarks && window.drawConnectors) {
+      results.faceMesh.multiFaceLandmarks.forEach(landmarks => {
+        // Face Tesselation (dezent, halbtransparent)
+        window.drawConnectors(ctx, landmarks, window.FACEMESH_TESSELATION, {
+          color: 'rgba(189, 189, 189, 0.3)', // #BDBDBD halbtransparent
+          lineWidth: 0.5
+        });
+        
+        // Augen (hervorgehoben)
+        window.drawConnectors(ctx, landmarks, window.FACEMESH_RIGHT_EYE, {
+          color: '#E08A00', // Orange für Aufmerksamkeit
+          lineWidth: 2
+        });
+        window.drawConnectors(ctx, landmarks, window.FACEMESH_LEFT_EYE, {
+          color: '#E08A00',
+          lineWidth: 2
+        });
+        
+        // Lippen
+        window.drawConnectors(ctx, landmarks, window.FACEMESH_LIPS, {
+          color: '#007A5A', // Grün
+          lineWidth: 2
+        });
+        
+        // Iris (wenn vorhanden)
+        if (landmarks.length > 468) {
+          const leftIris = landmarks.slice(468, 473);
+          const rightIris = landmarks.slice(473, 478);
+          
+          // Draw Iris Landmarks
+          leftIris.forEach(landmark => {
+            ctx.fillStyle = '#E08A00';
+            ctx.beginPath();
+            ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 2, 0, 2 * Math.PI);
+            ctx.fill();
+          });
+          
+          rightIris.forEach(landmark => {
+            ctx.fillStyle = '#E08A00';
+            ctx.beginPath();
+            ctx.arc(landmark.x * canvas.width, landmark.y * canvas.height, 2, 0, 2 * Math.PI);
+            ctx.fill();
+          });
+        }
+      });
+    }
+    
+    // 3. HANDS (Hände) - Rot/Cyan je nach Hand
+    if (results.hands?.multiHandLandmarks && window.drawConnectors) {
+      results.hands.multiHandLandmarks.forEach((handLandmarks, index) => {
+        const handedness = results.hands.multiHandedness?.[index]?.label || 'Unknown';
+        const handColor = handedness === 'Left' ? '#C23B3B' : '#0E7DB8'; // Rot vs Blau
+        
+        // Hand Connections
+        window.drawConnectors(ctx, handLandmarks, window.HAND_CONNECTIONS, {
+          color: handColor,
+          lineWidth: 3
+        });
+        
+        // Hand Landmarks
+        window.drawLandmarks(ctx, handLandmarks, {
+          color: handColor,
+          lineWidth: 1,
+          radius: 5
+        });
+      });
     }
   };
 
@@ -484,10 +697,19 @@ function LiveSession() {
         muted
       />
 
-      {/* Hidden Canvas für MediaPipe (optional, falls benötigt) */}
+      {/* MediaPipe Overlay Canvas - Zeigt Verbindungslinien */}
       <canvas 
         ref={canvasRef}
-        style={{ display: 'none' }}
+        className="mediapipe-overlay"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none', // Klicks durchlassen
+          zIndex: 1 // Über Video, aber unter UI-Elementen
+        }}
         width="640"
         height="480"
       />

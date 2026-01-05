@@ -22,12 +22,39 @@ function SessionPrepare({ user }) {
 
   const checkDevices = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      // Flexible constraints für Device-Check
+      const constraints = {
+        video: {
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user'
+        },
+        audio: {
+          echoCancellation: true
+        }
+      };
+      
+      console.log('🔍 Checking devices with constraints:', constraints);
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      console.log('✅ Devices found:', {
+        video: stream.getVideoTracks().length > 0,
+        audio: stream.getAudioTracks().length > 0
+      });
+      
       setCameraStatus(true);
       setMicrophoneStatus(true);
+      
+      // Stop stream immediately (just checking)
       stream.getTracks().forEach(track => track.stop());
     } catch (err) {
-      console.error('Device access error:', err);
+      console.error('❌ Device access error:', err.name, err.message);
+      
+      if (err.name === 'NotFoundError') {
+        console.warn('⚠️ No camera/microphone found');
+      }
+      
       setCameraStatus(false);
       setMicrophoneStatus(false);
     }
