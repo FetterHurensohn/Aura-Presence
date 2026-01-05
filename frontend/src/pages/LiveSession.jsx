@@ -20,6 +20,7 @@ function LiveSession() {
   const [isPaused, setIsPaused] = useState(false);
   const [cameraOn, setCameraOn] = useState(false); // Initially OFF
   const [microphoneOn, setMicrophoneOn] = useState(false); // Initially OFF
+  const [showMediaPipeLines, setShowMediaPipeLines] = useState(true); // MediaPipe Visualisierung an/aus
   const [elapsedTime, setElapsedTime] = useState(0);
   const [analysisStarted, setAnalysisStarted] = useState(false);
   
@@ -486,8 +487,13 @@ function LiveSession() {
     
     const ctx = canvas.getContext('2d');
     
-    // Canvas leeren (transparent für Video-Overlay)
+    // Canvas IMMER leeren (auch wenn Visualisierung aus ist)
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // WICHTIG: Nur zeichnen wenn showMediaPipeLines aktiv ist!
+    if (!showMediaPipeLines) {
+      return;
+    }
     
     // Prüfe, ob Drawing Utils verfügbar sind
     if (!window.drawConnectors || !window.drawLandmarks) {
@@ -773,6 +779,22 @@ function LiveSession() {
     }
   };
 
+  const handleToggleMediaPipeLines = () => {
+    const newState = !showMediaPipeLines;
+    setShowMediaPipeLines(newState);
+    
+    console.log(newState ? '👁️ MediaPipe Linien anzeigen' : '🙈 MediaPipe Linien ausblenden');
+    
+    // Feedback aktualisieren
+    if (aiFeedback.length > 1) {
+      const feedback = [...aiFeedback];
+      feedback[feedback.length - 1] = newState 
+        ? '👁️ Tracking sichtbar' 
+        : '🙈 Tracking ausgeblendet';
+      setAiFeedback(feedback);
+    }
+  };
+
   const handleStop = async () => {
     setIsRecording(false);
     setIsPaused(true);
@@ -992,6 +1014,24 @@ function LiveSession() {
                 <path fillRule="evenodd" d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l.714 1H9.5a1 1 0 0 1 1 1v6a1 1 0 0 1-.144.518l.605.847zM1.428 4.18A.999.999 0 0 0 1 5v6a1 1 0 0 0 1 1h5.014l.714 1H2a2 2 0 0 1-2-2V5c0-.675.334-1.272.847-1.634l.58.814zM15 11.73l-3.5-1.555v-4.35L15 4.269v7.462zm-4.407 3.56l-10-14 .814-.58 10 14-.814.58z"/>
               </svg>
             )}
+          </button>
+
+          <button 
+            className="control-btn" 
+            onClick={handleToggleMediaPipeLines} 
+            title={showMediaPipeLines ? "Tracking ausblenden" : "Tracking anzeigen"}
+            disabled={!analysisStarted}
+            style={{ 
+              opacity: !analysisStarted ? 0.5 : 1,
+              background: showMediaPipeLines 
+                ? 'linear-gradient(90deg, rgba(14, 124, 184, 1) 0%, rgba(51, 11, 145, 1) 100%)' 
+                : 'rgba(75, 85, 99, 0.95)'
+            }}
+          >
+            <svg viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="3" r="1"/>
+              <path d="M16 21L12 13M12 13V7M12 13L8 21M12 7L18 9M12 7L6 9"/>
+            </svg>
           </button>
 
           <button 
