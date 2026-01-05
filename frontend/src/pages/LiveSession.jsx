@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import mediaPipeService from '../services/MediaPipeService';
 import { UnifiedFeatureExtractor } from '../services/FeatureExtractor';
 import analysisAggregator from '../services/AnalysisAggregator';
+import voiceAnalyzer from '../services/VoiceAnalyzer';
 import apiClient from '../services/apiService';
 import './LiveSession.css';
 
@@ -30,6 +31,10 @@ function LiveSession() {
   const animationFrameRef = useRef(null);
   const lastProcessTimeRef = useRef(0);
   const showMediaPipeLinesRef = useRef(true); // Ref für Callback-Zugriff
+  
+  // Voice Analyzer State
+  const [voiceAnalyzerInitialized, setVoiceAnalyzerInitialized] = useState(false);
+  const voiceUpdateIntervalRef = useRef(null);
   
   // Realtime Scores
   const [scores, setScores] = useState({
@@ -340,6 +345,14 @@ function LiveSession() {
       if (mediaPipeService.isReady()) {
         mediaPipeService.close();
       }
+      
+      // Stop Voice Analyzer
+      if (voiceUpdateIntervalRef.current) {
+        clearInterval(voiceUpdateIntervalRef.current);
+      }
+      if (voiceAnalyzer.isRunning) {
+        voiceAnalyzer.stop();
+      }
     };
   }, []);
 
@@ -364,6 +377,24 @@ function LiveSession() {
         videoRef.current,
         handleMediaPipeResults
       );
+      
+      // Voice Analyzer initialisieren (wenn Mikrofon an)
+      if (microphoneOn && streamRef.current) {
+        try {
+          await voiceAnalyzer.initialize(streamRef.current, 'de-DE');
+          setVoiceAnalyzerInitialized(true);
+          
+          // Voice Score Update Interval (alle 2 Sekunden)
+          voiceUpdateIntervalRef.current = setInterval(() => {
+            updateVoiceScore();
+          }, 2000);
+          
+          console.log('✅ Voice Analyzer erfolgreich initialisiert');
+        } catch (err) {
+          console.warn('⚠️ Voice Analyzer konnte nicht initialisiert werden:', err);
+          // Weiter ohne Voice Analyzer
+        }
+      }
       
       // Aggregator starten
       analysisAggregator.start();
@@ -642,6 +673,33 @@ function LiveSession() {
     }
   };
 
+  // Voice Score Update (alle 2 Sekunden)
+  const updateVoiceScore = () => {
+    if (!voiceAnalyzer.isRunning) return;
+    
+    try {
+      const voiceAnalysis = voiceAnalyzer.getRealtimeAnalysis();
+      
+      // Update Stimme-Score (Overall Voice Score)
+      setScores(prevScores => ({
+        ...prevScores,
+        stimme: voiceAnalysis.overall
+      }));
+      
+      // Debug Log (alle 10 Updates = 20 Sekunden)
+      if (Math.random() < 0.1) {
+        console.log('🎤 Voice Score:', {
+          overall: voiceAnalysis.overall,
+          wpm: voiceAnalysis.speech.wordsPerMinute,
+          fillerWords: voiceAnalysis.speech.fillerWordCount,
+          pauses: voiceAnalysis.pauses.count
+        });
+      }
+    } catch (err) {
+      console.error('Error updating voice score:', err);
+    }
+  };
+
   // AI Feedback Update basierend auf Features
   const updateAIFeedback = (features, currentScores) => {
     const feedback = [];
@@ -809,13 +867,32 @@ function LiveSession() {
       mediaPipeService.close();
     }
     
+    // Stop Voice Analyzer
+    if (voiceUpdateIntervalRef.current) {
+      clearInterval(voiceUpdateIntervalRef.current);
+    }
+    if (voiceAnalyzer.isRunning) {
+      voiceAnalyzer.stop();
+    }
+    
     // Stop camera and microphone completely
     stopCamera();
     setCameraOn(false);
     setMicrophoneOn(false);
     
     // Finale Analyse generieren
-    const analysisData = analysisAggregator.exportForBackend();
+    const mediaPipeData = analysisAggregator.exportForBackend();
+    const voiceData = voiceAnalyzerInitialized ? voiceAnalyzer.exportForBackend() : null;
+    
+    // Kombiniere MediaPipe + Voice Daten
+    const analysisData = {
+      ...mediaPipeData,
+      ...voiceData,
+      summary: {
+        ...mediaPipeData.summary,
+        voiceScore: voiceData?.voice?.overall || 0
+      }
+    };
     
     console.log('📊 Finale Analyse:', analysisData);
     
