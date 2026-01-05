@@ -15,11 +15,13 @@ function LiveSession() {
   const navigate = useNavigate();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const [isRecording, setIsRecording] = useState(true);
+  const streamRef = useRef(null); // Store media stream for proper cleanup
+  const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [cameraOn, setCameraOn] = useState(true);
-  const [microphoneOn, setMicrophoneOn] = useState(true);
+  const [cameraOn, setCameraOn] = useState(false); // Initially OFF
+  const [microphoneOn, setMicrophoneOn] = useState(false); // Initially OFF
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [analysisStarted, setAnalysisStarted] = useState(false);
   
   // MediaPipe State
   const [mediaPipeInitialized, setMediaPipeInitialized] = useState(false);
@@ -37,21 +39,21 @@ function LiveSession() {
 
   // KI-Tutor Feedback
   const [aiFeedback, setAiFeedback] = useState([
-    'Starte Kamera...',
-    'Lade MediaPipe...',
-    'Initialisiere Analyse...'
+    '📹 Kamera aktivieren',
+    '🎙️ Mikrofon aktivieren',
+    '▶️ Analyse starten'
   ]);
 
   // Timer
   useEffect(() => {
     let interval;
-    if (isRecording && !isPaused) {
+    if (isRecording && !isPaused && cameraOn) {
       interval = setInterval(() => {
         setElapsedTime(prev => prev + 1);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isRecording, isPaused]);
+  }, [isRecording, isPaused, cameraOn]);
 
   // Format time as MM:SS
   const formatTime = (seconds) => {
@@ -60,46 +62,126 @@ function LiveSession() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Initialize camera
-  useEffect(() => {
-    const initCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          video: { width: 640, height: 480 }, 
-          audio: true 
-        });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          
-          // Warte bis Video bereit ist
-          videoRef.current.onloadedmetadata = () => {
-            initMediaPipe();
-          };
-        }
-      } catch (err) {
-        console.error('Camera access error:', err);
-        setAiFeedback(['Kamera-Zugriff verweigert!', 'Bitte Kamera-Berechtigung erteilen']);
-      }
-    };
-    initCamera();
+  // Initialize camera (only when user starts analysis)
+  const initializeCamera = async () => {
+    if (streamRef.current) {
+      // Camera already initialized
+      return;
+    }
 
+    try {
+      setAiFeedback(['📹 Aktiviere Kamera...', '🎙️ Aktiviere Mikrofon...']);
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: 640, height: 480 }, 
+        audio: true 
+      });
+      
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        
+        // Wait until video is ready
+        videoRef.current.onloadedmetadata = () => {
+          setCameraOn(true);
+          setMicrophoneOn(true);
+          setAnalysisStarted(true);
+          setIsRecording(true);
+          initMediaPipe();
+        };
+      }
+    } catch (err) {
+      console.error('Camera access error:', err);
+      setAiFeedback([
+        '❌ Kamera-Zugriff verweigert!', 
+        'Bitte Berechtigung erteilen',
+        'Seite neu laden'
+      ]);
+    }
+  };
+
+  // Stop camera completely
+  const stopCameraCompletely = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log(`🛑 Stopped track: ${track.kind} (${track.label})`);
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setCameraOn(false);
+    setMicrophoneOn(false);
+    setAnalysisStarted(false);
+  };
+
+  // Stop camera (alias for compatibility)
+  const stopCamera = stopCameraCompletely;
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
-      // Cleanup
+      console.log('🧹 LiveSession: Cleanup on unmount');
+      
+      // Stop camera and microphone completely
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
+          track.stop();
+          console.log(`🛑 Stopped ${track.kind} track on unmount`);
+        });
+        streamRef.current = null;
+      }
+      
+      // Stop frame processing
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      
+      // Close MediaPipe
       if (mediaPipeService.isReady()) {
         mediaPipeService.close();
-      }
-      if (videoRef.current && videoRef.current.srcObject) {
-        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
       }
     };
   }, []);
 
+  // Initialize camera when turned on
+  const startCamera = async () => {
+    try {
+      setAiFeedback(['Starte Kamera...', 'Bitte warten...']);
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: 640, height: 480 }, 
+        audio: true 
+      });
+      
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        
+        // Warte bis Video bereit ist
+        videoRef.current.onloadedmetadata = async () => {
+          setCameraReady(true);
+          setAiFeedback(['✅ Kamera bereit!', 'MediaPipe wird geladen...']);
+          
+          // Initialize MediaPipe
+          await initMediaPipe();
+        };
+      }
+    } catch (err) {
+      console.error('Camera access error:', err);
+      setAiFeedback(['❌ Kamera-Zugriff verweigert!', 'Bitte Berechtigung erteilen']);
+      setCameraOn(false);
+      setMicrophoneOn(false);
+    }
+  };
+
   // Initialize MediaPipe
   const initMediaPipe = async () => {
-    if (!videoRef.current || !cameraOn) return;
+    if (!videoRef.current) return;
     
     try {
       setAiFeedback(['Initialisiere MediaPipe...', 'Lade AI-Modelle...']);
@@ -117,7 +199,8 @@ function LiveSession() {
       analysisAggregator.start();
       
       setMediaPipeInitialized(true);
-      setAiFeedback(['Analyse gestartet!', 'Viel Erfolg!']);
+      setIsRecording(true); // Start recording when MediaPipe is ready
+      setAiFeedback(['✅ Analyse läuft!', '👍 Viel Erfolg!']);
       
       // Frame-Processing starten
       startFrameProcessing();
@@ -126,7 +209,7 @@ function LiveSession() {
       
     } catch (error) {
       console.error('MediaPipe Init-Fehler:', error);
-      setAiFeedback(['MediaPipe-Fehler!', 'Bitte Seite neu laden']);
+      setAiFeedback(['❌ MediaPipe-Fehler!', 'Bitte Seite neu laden']);
     }
   };
 
@@ -276,33 +359,57 @@ function LiveSession() {
     }
   };
 
-  const handleToggleCamera = () => {
+  const handleToggleCamera = async () => {
     const newCameraState = !cameraOn;
     setCameraOn(newCameraState);
     
-    if (videoRef.current && videoRef.current.srcObject) {
-      videoRef.current.srcObject.getVideoTracks().forEach(track => {
-        track.enabled = newCameraState;
-      });
-    }
-    
-    if (!newCameraState) {
-      // Stop MediaPipe when camera off
+    if (newCameraState) {
+      // Turn camera ON
+      await startCamera();
+    } else {
+      // Turn camera OFF - completely stop the stream
+      stopCamera();
+      
+      // Stop MediaPipe
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-    } else {
-      // Restart MediaPipe
-      startFrameProcessing();
+      if (mediaPipeService.isReady()) {
+        mediaPipeService.close();
+      }
+      
+      setMediaPipeInitialized(false);
+      setIsRecording(false);
+      setAiFeedback(['📹 Kamera ausgeschaltet', 'Aktiviere Kamera zum Fortfahren']);
     }
   };
 
   const handleToggleMicrophone = () => {
-    setMicrophoneOn(!microphoneOn);
-    if (videoRef.current && videoRef.current.srcObject) {
-      videoRef.current.srcObject.getAudioTracks().forEach(track => {
-        track.enabled = !microphoneOn;
+    const newMicState = !microphoneOn;
+    setMicrophoneOn(newMicState);
+    
+    if (streamRef.current) {
+      streamRef.current.getAudioTracks().forEach(track => {
+        if (newMicState) {
+          // Enable audio track
+          track.enabled = true;
+          console.log('🎙️ Mikrofon aktiviert');
+        } else {
+          // Disable audio track (stops microphone capture)
+          track.enabled = false;
+          console.log('🔇 Mikrofon deaktiviert');
+        }
       });
+    }
+    
+    if (!newMicState) {
+      const feedback = [...aiFeedback];
+      feedback[0] = '🔇 Mikrofon ausgeschaltet';
+      setAiFeedback(feedback);
+    } else {
+      const feedback = [...aiFeedback];
+      feedback[0] = '🎙️ Mikrofon aktiviert';
+      setAiFeedback(feedback);
     }
   };
 
@@ -317,6 +424,11 @@ function LiveSession() {
     if (mediaPipeService.isReady()) {
       mediaPipeService.close();
     }
+    
+    // Stop camera and microphone completely
+    stopCamera();
+    setCameraOn(false);
+    setMicrophoneOn(false);
     
     // Finale Analyse generieren
     const analysisData = analysisAggregator.exportForBackend();
@@ -347,11 +459,6 @@ function LiveSession() {
           error: 'Analyse konnte nicht gespeichert werden'
         } 
       });
-    }
-    
-    // Kamera stoppen
-    if (videoRef.current && videoRef.current.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
     }
   };
 
@@ -508,7 +615,13 @@ function LiveSession() {
             )}
           </button>
 
-          <button className="control-btn stop-btn" onClick={handleStop} title="Aufnahme beenden" disabled={!isRecording}>
+          <button 
+            className="control-btn stop-btn" 
+            onClick={handleStop} 
+            title="Aufnahme beenden" 
+            disabled={!analysisStarted}
+            style={{ opacity: !analysisStarted ? 0.5 : 1 }}
+          >
             <svg viewBox="0 0 32 32" fill="white">
               <path d="M15.003,23.063l-2.994,-0c-0.795,-0 -1.558,0.316 -2.121,0.878c-0.563,0.563 -0.879,1.326 -0.879,2.122c0,0.638 0,1.345 0,1.984c0,0.796 0.316,1.559 0.879,2.121c0.563,0.563 1.326,0.879 2.121,0.879l7.993,0c0.796,0 1.559,-0.316 2.122,-0.879c0.562,-0.562 0.878,-1.325 0.878,-2.121l0,-1.984c0,-0.796 -0.316,-1.559 -0.878,-2.122c-0.563,-0.562 -1.326,-0.878 -2.122,-0.878l-2.999,-0l-0.03,-21.081c-0.001,-0.551 -0.45,-0.999 -1.002,-0.998c-0.551,0.001 -0.999,0.449 -0.998,1.001l0.03,21.078Z"/>
               <path d="M18.974,2.988l0.018,12.012l9.008,-0c0.384,0 0.735,-0.22 0.901,-0.567c0.167,-0.346 0.12,-0.757 -0.12,-1.057l-3.501,-4.382c0,-0 3.501,-4.382 3.501,-4.382c0.24,-0.3 0.287,-0.712 0.12,-1.058c-0.166,-0.346 -0.517,-0.566 -0.901,-0.566l-9.026,-0Z"/>
