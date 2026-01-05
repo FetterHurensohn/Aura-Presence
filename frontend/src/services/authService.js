@@ -88,12 +88,22 @@ export function getToken() {
 
 /**
  * Profil aktualisieren
+ * Verwendet PATCH /auth/me als Fallback für bessere Kompatibilität
  */
 export async function updateProfile(profileData) {
-  const response = await apiClient.put('/auth/profile', profileData);
-  
-  // Backend wrapped die Response in "data"
-  return response.data.data?.user || response.data.user;
+  try {
+    // Versuche PUT /auth/profile
+    const response = await apiClient.put('/auth/profile', profileData);
+    return response.data.data?.user || response.data.user;
+  } catch (error) {
+    // Fallback zu PATCH /auth/me
+    if (error.response?.status === 404) {
+      console.log('⚠️ PUT /auth/profile nicht gefunden, versuche PATCH /auth/me');
+      const response = await apiClient.patch('/auth/me', profileData);
+      return response.data.data?.user || response.data.user;
+    }
+    throw error;
+  }
 }
 
 

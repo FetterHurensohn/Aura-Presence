@@ -106,6 +106,36 @@ router.get('/me', authenticateToken, (req, res) => {
 });
 
 /**
+ * PATCH /api/auth/me
+ * Alternative Route zum Aktualisieren des Profils (für Railway Compatibility)
+ */
+router.patch('/me', authenticateToken, validate(profileSchema), asyncHandler(async (req, res) => {
+  const { name, company, country, language } = req.body;
+  const userId = req.user.id;
+  
+  logger.info(`📝 Profile update via /me from user ${userId}:`, { name, company, country, language });
+  
+  // Alle Felder sind bereits durch Joi validiert
+  const updateData = {};
+  if (name !== undefined) updateData.name = name;
+  if (company !== undefined) updateData.company = company;
+  if (country !== undefined) updateData.country = country;
+  if (language !== undefined) updateData.language = language;
+  
+  logger.info(`🔄 Updating with data:`, updateData);
+  
+  // Update durchführen
+  const updatedUser = await updateUserProfile(userId, updateData);
+  
+  logger.info(`✅ Profile updated successfully for user ${userId}`);
+  
+  return sendSuccess(res, {
+    message: 'Profil erfolgreich aktualisiert',
+    user: sanitizeUser(updatedUser)
+  });
+}));
+
+/**
  * POST /api/auth/refresh
  * Refresh Access Token mit Refresh Token
  */
