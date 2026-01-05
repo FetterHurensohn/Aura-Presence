@@ -2,6 +2,7 @@
  * Aura Presence Backend Server
  * Hauptserver mit Express, Socket.IO für WebRTC-Signaling,
  * Auth, Analyse und Stripe-Integration
+ * Updated: 2025-01-05 - Profile Update Route
  */
 
 import dotenv from 'dotenv';

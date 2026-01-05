@@ -35,6 +35,7 @@ function Account({ user, onLogout, onUpdateUser }) {
   };
 
   const handleEdit = (field, currentValue) => {
+    console.log('🔧 handleEdit called:', { field, currentValue });
     setEditField(field);
     setEditValue(currentValue);
     setEditModalOpen(true);
@@ -311,7 +312,10 @@ function Account({ user, onLogout, onUpdateUser }) {
               <select
                 className="edit-modal-input"
                 value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
+                onChange={(e) => {
+                  console.log('🌐 Language dropdown changed:', e.target.value);
+                  setEditValue(e.target.value);
+                }}
               >
                 <option value="de">Deutsch</option>
                 <option value="en">English</option>

@@ -169,6 +169,8 @@ router.put('/profile', authenticateToken, validate(profileSchema), asyncHandler(
   const { name, company, country, language } = req.body;
   const userId = req.user.id;
   
+  logger.info(`📝 Profile update request from user ${userId}:`, { name, company, country, language });
+  
   // Alle Felder sind bereits durch Joi validiert
   const updateData = {};
   if (name !== undefined) updateData.name = name;
@@ -176,10 +178,12 @@ router.put('/profile', authenticateToken, validate(profileSchema), asyncHandler(
   if (country !== undefined) updateData.country = country;
   if (language !== undefined) updateData.language = language;
   
+  logger.info(`🔄 Updating with data:`, updateData);
+  
   // Update durchführen
   const updatedUser = await updateUserProfile(userId, updateData);
   
-  logger.info(`Profile updated for user ${userId}`);
+  logger.info(`✅ Profile updated successfully for user ${userId}`);
   
   return sendSuccess(res, {
     message: 'Profil erfolgreich aktualisiert',
