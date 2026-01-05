@@ -237,7 +237,7 @@ function LiveSession() {
         videoRef.current.onloadedmetadata = () => {
           console.log('✅ Video ready (separate streams)');
           setCameraOn(!!videoStream);
-          setMicrophoneOn(!!audioStream);
+          setMicrophoneOn(!!audioStream); // NUR true wenn Audio vorhanden!
           setAnalysisStarted(true);
           setIsRecording(true);
           initMediaPipe();
@@ -246,7 +246,7 @@ function LiveSession() {
 
       setAiFeedback([
         videoStream ? '✅ Kamera bereit!' : '⚠️ Kamera nicht verfügbar',
-        audioStream ? '✅ Mikrofon bereit!' : '⚠️ Mikrofon nicht verfügbar',
+        audioStream ? '✅ Mikrofon bereit!' : '⚠️ Kein Mikrofon erkannt',
         'MediaPipe wird geladen...'
       ]);
 
@@ -378,39 +378,36 @@ function LiveSession() {
         handleMediaPipeResults
       );
       
-      // Voice Analyzer initialisieren (wenn Mikrofon an)
-      if (microphoneOn && streamRef.current) {
+      // Voice Analyzer initialisieren (NUR wenn Audio-Track vorhanden!)
+      const audioTracks = streamRef.current?.getAudioTracks() || [];
+      
+      if (audioTracks.length > 0 && audioTracks[0].enabled) {
         try {
           console.log('🎤 Initializing Voice Analyzer...');
           console.log('Stream:', streamRef.current);
-          console.log('Audio Tracks:', streamRef.current.getAudioTracks());
+          console.log('Audio Tracks:', audioTracks);
+          console.log('✅ Audio track found:', audioTracks[0].label, 'enabled:', audioTracks[0].enabled);
           
-          const audioTracks = streamRef.current.getAudioTracks();
-          if (audioTracks.length === 0) {
-            console.warn('⚠️ No audio tracks found in stream!');
-            setAiFeedback(['⚠️ Mikrofon nicht gefunden', 'Bitte Berechtigung prüfen', '✅ Analyse läuft (ohne Voice)']);
-          } else {
-            console.log('✅ Audio track found:', audioTracks[0].label, 'enabled:', audioTracks[0].enabled);
-            
-            await voiceAnalyzer.initialize(streamRef.current, 'de-DE');
-            setVoiceAnalyzerInitialized(true);
-            
-            // Voice Score Update Interval (alle 2 Sekunden)
-            voiceUpdateIntervalRef.current = setInterval(() => {
-              updateVoiceScore();
-            }, 2000);
-            
-            console.log('✅ Voice Analyzer erfolgreich initialisiert');
-            setAiFeedback(['✅ Analyse läuft!', '🎤 Voice Analyzer aktiv', '👍 Viel Erfolg!']);
-          }
+          await voiceAnalyzer.initialize(streamRef.current, 'de-DE');
+          setVoiceAnalyzerInitialized(true);
+          
+          // Voice Score Update Interval (alle 2 Sekunden)
+          voiceUpdateIntervalRef.current = setInterval(() => {
+            updateVoiceScore();
+          }, 2000);
+          
+          console.log('✅ Voice Analyzer erfolgreich initialisiert');
+          setAiFeedback(['✅ Analyse läuft!', '🎤 Voice Analyzer aktiv', '👍 Viel Erfolg!']);
         } catch (err) {
           console.error('❌ Voice Analyzer Fehler:', err);
           console.error('Error details:', err.message, err.stack);
           setAiFeedback(['⚠️ Voice Analyzer Fehler', 'Analyse läuft ohne Stimme', '✅ MediaPipe aktiv']);
         }
       } else {
-        console.warn('⚠️ Mikrofon aus oder Stream nicht verfügbar');
-        setAiFeedback(['✅ Analyse läuft!', '⚠️ Mikrofon aus', '👍 Viel Erfolg!']);
+        console.warn('⚠️ Kein Audio-Track verfügbar - Voice Analyzer wird NICHT initialisiert');
+        console.log('Audio Tracks:', audioTracks);
+        console.log('Mikrofon Status:', microphoneOn);
+        setAiFeedback(['✅ Analyse läuft!', '⚠️ Kein Mikrofon erkannt', '👍 Viel Erfolg!']);
       }
       
       // Aggregator starten
