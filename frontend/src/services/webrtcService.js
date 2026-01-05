@@ -66,13 +66,10 @@ class WebRTCService {
       return;
     }
 
-    // Remove trailing slash if present
-    const backendUrl = import.meta.env.VITE_BACKEND_URL 
+    const serverUrl = import.meta.env.VITE_BACKEND_URL 
       || (import.meta.env.PROD 
           ? 'https://aura-presence-backend-production.up.railway.app'
           : 'http://localhost:3001');
-    
-    const serverUrl = backendUrl.replace(/\/$/, '');
     
     this.socket = io(serverUrl, {
       transports: ['websocket'],

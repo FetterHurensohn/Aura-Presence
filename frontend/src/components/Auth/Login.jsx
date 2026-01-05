@@ -38,12 +38,20 @@ function Login({ onLogin }) {
 
     try {
       const user = await login(email, password);
+      console.log('✅ Login erfolgreich, User:', user);
       onLogin(user);
       showSuccess('Erfolgreich angemeldet! Willkommen zurück.');
       navigate('/dashboard');
     } catch (err) {
-      setError('E-Mail oder Passwort ist falsch');
-      console.error('Login-Fehler:', err);
+      console.error('❌ Login-Fehler:', err);
+      console.error('Error response:', err.response?.data);
+      
+      // Show backend error message if available
+      const errorMessage = err.response?.data?.message 
+        || err.response?.data?.error 
+        || 'E-Mail oder Passwort ist falsch';
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

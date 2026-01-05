@@ -13,7 +13,8 @@ export async function register(email, password) {
     password
   });
   
-  const { token, refreshToken, user } = response.data;
+  // Backend wrapped die Response in "data"
+  const { token, refreshToken, user } = response.data.data || response.data;
   
   // Token speichern
   localStorage.setItem('token', token);
@@ -33,7 +34,8 @@ export async function login(email, password) {
     password
   });
   
-  const { token, refreshToken, user } = response.data;
+  // Backend wrapped die Response in "data"
+  const { token, refreshToken, user } = response.data.data || response.data;
   
   // Token speichern
   localStorage.setItem('token', token);
@@ -63,7 +65,8 @@ export async function getCurrentUser() {
   }
   
   const response = await apiClient.get('/auth/me');
-  return response.data.user;
+  // Backend wrapped die Response in "data"
+  return response.data.data?.user || response.data.user;
 }
 
 /**
