@@ -75,19 +75,27 @@ export const translations = {
     
     // Account Page
     account: {
-      title: 'Kontoeinstellungen',
+      title: 'Profile Summary',
       profile: 'Profil',
-      email: 'E-Mail',
-      name: 'Name',
+      email: 'E-Mail-Adresse',
+      name: 'Vor- und Nachname',
       company: 'Unternehmen',
       country: 'Land',
       language: 'Sprache',
+      password: 'Passwort',
+      notSpecified: 'Nicht angegeben',
       edit: 'Bearbeiten',
       save: 'Speichern',
       cancel: 'Abbrechen',
       logout: 'Abmelden',
       changePassword: 'Passwort ändern',
-      deleteAccount: 'Konto löschen'
+      deleteAccount: 'Konto löschen',
+      profileUpdated: 'Profil erfolgreich aktualisiert',
+      errors: {
+        invalidValue: 'Bitte einen gültigen Wert eingeben',
+        selectLanguage: 'Bitte eine Sprache auswählen',
+        updateFailed: 'Fehler beim Aktualisieren des Profils'
+      }
     },
     
     // Auth Pages
@@ -226,19 +234,27 @@ export const translations = {
     
     // Account Page
     account: {
-      title: 'Account Settings',
+      title: 'Profile Summary',
       profile: 'Profile',
-      email: 'Email',
-      name: 'Name',
+      email: 'Email Address',
+      name: 'First and Last Name',
       company: 'Company',
       country: 'Country',
       language: 'Language',
+      password: 'Password',
+      notSpecified: 'Not specified',
       edit: 'Edit',
       save: 'Save',
       cancel: 'Cancel',
       logout: 'Logout',
       changePassword: 'Change Password',
-      deleteAccount: 'Delete Account'
+      deleteAccount: 'Delete Account',
+      profileUpdated: 'Profile updated successfully',
+      errors: {
+        invalidValue: 'Please enter a valid value',
+        selectLanguage: 'Please select a language',
+        updateFailed: 'Error updating profile'
+      }
     },
     
     // Auth Pages
@@ -377,19 +393,27 @@ export const translations = {
     
     // Account Page
     account: {
-      title: 'Paramètres du compte',
+      title: 'Résumé du profil',
       profile: 'Profil',
-      email: 'Email',
-      name: 'Nom',
+      email: 'Adresse e-mail',
+      name: 'Prénom et nom',
       company: 'Entreprise',
       country: 'Pays',
       language: 'Langue',
+      password: 'Mot de passe',
+      notSpecified: 'Non spécifié',
       edit: 'Modifier',
       save: 'Enregistrer',
       cancel: 'Annuler',
       logout: 'Déconnexion',
       changePassword: 'Changer le mot de passe',
-      deleteAccount: 'Supprimer le compte'
+      deleteAccount: 'Supprimer le compte',
+      profileUpdated: 'Profil mis à jour avec succès',
+      errors: {
+        invalidValue: 'Veuillez saisir une valeur valide',
+        selectLanguage: 'Veuillez sélectionner une langue',
+        updateFailed: 'Erreur lors de la mise à jour du profil'
+      }
     },
     
     // Auth Pages
@@ -527,19 +551,27 @@ export const translations = {
     
     // Account Page
     account: {
-      title: 'Configuración de cuenta',
+      title: 'Resumen del perfil',
       profile: 'Perfil',
-      email: 'Correo electrónico',
-      name: 'Nombre',
+      email: 'Dirección de correo',
+      name: 'Nombre y apellido',
       company: 'Empresa',
       country: 'País',
       language: 'Idioma',
+      password: 'Contraseña',
+      notSpecified: 'No especificado',
       edit: 'Editar',
       save: 'Guardar',
       cancel: 'Cancelar',
       logout: 'Cerrar sesión',
       changePassword: 'Cambiar contraseña',
-      deleteAccount: 'Eliminar cuenta'
+      deleteAccount: 'Eliminar cuenta',
+      profileUpdated: 'Perfil actualizado con éxito',
+      errors: {
+        invalidValue: 'Por favor ingrese un valor válido',
+        selectLanguage: 'Por favor seleccione un idioma',
+        updateFailed: 'Error al actualizar el perfil'
+      }
     },
     
     // Auth Pages
@@ -677,19 +709,27 @@ export const translations = {
     
     // Account Page
     account: {
-      title: 'Impostazioni account',
+      title: 'Riepilogo profilo',
       profile: 'Profilo',
-      email: 'Email',
-      name: 'Nome',
+      email: 'Indirizzo email',
+      name: 'Nome e cognome',
       company: 'Azienda',
       country: 'Paese',
       language: 'Lingua',
+      password: 'Password',
+      notSpecified: 'Non specificato',
       edit: 'Modifica',
       save: 'Salva',
       cancel: 'Annulla',
       logout: 'Disconnetti',
       changePassword: 'Cambia password',
-      deleteAccount: 'Elimina account'
+      deleteAccount: 'Elimina account',
+      profileUpdated: 'Profilo aggiornato con successo',
+      errors: {
+        invalidValue: 'Si prega di inserire un valore valido',
+        selectLanguage: 'Si prega di selezionare una lingua',
+        updateFailed: 'Errore durante l\'aggiornamento del profilo'
+      }
     },
     
     // Auth Pages

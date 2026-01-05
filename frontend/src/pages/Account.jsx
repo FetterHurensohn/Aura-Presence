@@ -55,13 +55,13 @@ function Account({ user, onLogout, onUpdateUser }) {
   const handleSaveEdit = async () => {
     // Für language ist trim() nicht nötig, da es ein Dropdown ist
     if (editField !== 'language' && (!editValue || editValue.trim().length === 0)) {
-      showError('Bitte einen gültigen Wert eingeben');
+      showError(t('account.errors.invalidValue'));
       return;
     }
     
     // Für language: Prüfe ob ein gültiger Wert ausgewählt wurde
     if (editField === 'language' && !editValue) {
-      showError('Bitte eine Sprache auswählen');
+      showError(t('account.errors.selectLanguage'));
       return;
     }
 
@@ -98,12 +98,12 @@ function Account({ user, onLogout, onUpdateUser }) {
         onUpdateUser(updatedUser);
       }
       
-      showSuccess('Profil erfolgreich aktualisiert');
+      showSuccess(t('account.profileUpdated'));
       setEditModalOpen(false);
       setEditValue('');
     } catch (err) {
       console.error('❌ Fehler beim Aktualisieren:', err);
-      showError(err.response?.data?.message || 'Fehler beim Aktualisieren des Profils');
+      showError(err.response?.data?.message || t('account.errors.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -186,13 +186,13 @@ function Account({ user, onLogout, onUpdateUser }) {
       <div className="account-content-new">
         {/* Profile Summary */}
         <section className="account-section">
-          <h1 className="account-main-title">Profile Summary</h1>
+          <h1 className="account-main-title">{t('account.title')}</h1>
 
           {/* Vor- und Nachname */}
           <div className="profile-field">
-            <div className="field-label-bold">Vor- und Nachname:</div>
+            <div className="field-label-bold">{t('account.name')}:</div>
             <div className="field-row">
-              <span className="field-value">{user?.name || 'Nicht angegeben'}</span>
+              <span className="field-value">{user?.name || t('account.notSpecified')}</span>
               <button className="edit-icon-btn" onClick={() => handleEdit('name', user?.name || '')}>
                 <svg viewBox="0 0 32 32" fill="currentColor">
                   <path d="M25.384,11.987a.993.993,0,0,1-.707-.293L20.434,7.452a1,1,0,0,1,0-1.414l2.122-2.121a3.07,3.07,0,0,1,4.242,0l1.414,1.414a3,3,0,0,1,0,4.242l-2.122,2.121A.993.993,0,0,1,25.384,11.987ZM22.555,6.745l2.829,2.828L26.8,8.159a1,1,0,0,0,0-1.414L25.384,5.331a1.023,1.023,0,0,0-1.414,0Z"/>
@@ -205,9 +205,9 @@ function Account({ user, onLogout, onUpdateUser }) {
 
           {/* Unternehmen */}
           <div className="profile-field">
-            <div className="field-label-bold">Unternehmen:</div>
+            <div className="field-label-bold">{t('account.company')}:</div>
             <div className="field-row">
-              <span className="field-value">{user?.company || 'Nicht angegeben'}</span>
+              <span className="field-value">{user?.company || t('account.notSpecified')}</span>
               <button className="edit-icon-btn" onClick={() => handleEdit('company', user?.company || '')}>
                 <svg viewBox="0 0 32 32" fill="currentColor">
                   <path d="M25.384,11.987a.993.993,0,0,1-.707-.293L20.434,7.452a1,1,0,0,1,0-1.414l2.122-2.121a3.07,3.07,0,0,1,4.242,0l1.414,1.414a3,3,0,0,1,0,4.242l-2.122,2.121A.993.993,0,0,1,25.384,11.987ZM22.555,6.745l2.829,2.828L26.8,8.159a1,1,0,0,0,0-1.414L25.384,5.331a1.023,1.023,0,0,0-1.414,0Z"/>
@@ -220,9 +220,9 @@ function Account({ user, onLogout, onUpdateUser }) {
 
           {/* Land */}
           <div className="profile-field">
-            <div className="field-label-bold">Land:</div>
+            <div className="field-label-bold">{t('account.country')}:</div>
             <div className="field-row">
-              <span className="field-value">{user?.country || 'Nicht angegeben'}</span>
+              <span className="field-value">{user?.country || t('account.notSpecified')}</span>
               <button className="edit-icon-btn" onClick={() => handleEdit('country', user?.country || '')}>
                 <svg viewBox="0 0 32 32" fill="currentColor">
                   <path d="M25.384,11.987a.993.993,0,0,1-.707-.293L20.434,7.452a1,1,0,0,1,0-1.414l2.122-2.121a3.07,3.07,0,0,1,4.242,0l1.414,1.414a3,3,0,0,1,0,4.242l-2.122,2.121A.993.993,0,0,1,25.384,11.987ZM22.555,6.745l2.829,2.828L26.8,8.159a1,1,0,0,0,0-1.414L25.384,5.331a1.023,1.023,0,0,0-1.414,0Z"/>
@@ -235,7 +235,7 @@ function Account({ user, onLogout, onUpdateUser }) {
 
           {/* E-Mail-Adresse - KEIN EDIT-ICON */}
           <div className="profile-field">
-            <div className="field-label-bold">E-Mail-Adresse:</div>
+            <div className="field-label-bold">{t('account.email')}:</div>
             <div className="field-row">
               <span className="field-value">{user?.email || 'jacquesdong9@gmail.com'}</span>
             </div>
@@ -243,7 +243,7 @@ function Account({ user, onLogout, onUpdateUser }) {
 
           {/* Passwort */}
           <div className="profile-field">
-            <div className="field-label-bold">Passwort:</div>
+            <div className="field-label-bold">{t('account.password')}:</div>
             <div className="field-row">
               <span className="field-value">***************</span>
               <button className="edit-icon-btn" onClick={() => handleEdit('password', '***************')}>
@@ -258,7 +258,7 @@ function Account({ user, onLogout, onUpdateUser }) {
 
           {/* Sprache */}
           <div className="profile-field">
-            <div className="field-label-bold">Sprache:</div>
+            <div className="field-label-bold">{t('account.language')}:</div>
             <div 
               className="language-selector-container"
               onClick={(e) => {
