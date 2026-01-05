@@ -62,23 +62,10 @@ export function initSentry() {
         });
       }
 
-      // 3. Extra Context filtern
-      if (event.extra) {
-        // Video/Audio Daten
-        if (event.extra.videoFrame) delete event.extra.videoFrame;
-        if (event.extra.rawVideo) delete event.extra.rawVideo;
-        if (event.extra.rawAudio) delete event.extra.rawAudio;
-        
-        // Biometric/AI Daten
-        if (event.extra.faceData) delete event.extra.faceData;
-        if (event.extra.emotionScores) delete event.extra.emotionScores;
-        
-        // Base64-Strings
-        Object.keys(event.extra).forEach(key => {
-          if (typeof event.extra[key] === 'string' && event.extra[key].length > 1000) {
-            event.extra[key] = '[LARGE_DATA_REDACTED]';
-          }
-        });
+      // 3. Contexts filtern
+      if (event.contexts?.user) {
+        delete event.contexts.user.email;
+        delete event.contexts.user.ip_address;
       }
 
       // 4. User Context
@@ -107,9 +94,14 @@ export function initSentry() {
 }
 
 /**
- * Express Request Handler (Sentry v10)
+ * Express Request Handler für Sentry Tracing
  */
 export function sentryRequestHandler() {
+  if (!Sentry) {
+    // Fallback: No-op middleware
+    return (req, res, next) => next();
+  }
+
   return (req, res, next) => {
     // Optional: Add custom context
     Sentry.setContext('request', {
@@ -122,36 +114,28 @@ export function sentryRequestHandler() {
 }
 
 /**
- * Express Error Handler (Sentry v10)
- * MUSS NACH allen Routes registriert werden!
+ * Express Error Handler für Sentry
  */
 export function registerSentryErrorHandler(app) {
-  Sentry.setupExpressErrorHandler(app);
-}
-
-/**
- * Manuell einen Error an Sentry senden
- */
-export function captureException(error, context = {}) {
-  Sentry.captureException(error, {
-    extra: context,
-  });
-}
-
-/**
- * Set User Context (nach Login)
- */
-export function setUserContext(user) {
-  if (!user) {
-    Sentry.setUser(null);
+  if (!Sentry) {
+    console.log('ℹ️  Sentry: Error handler skipped (not installed)');
     return;
   }
-
-  Sentry.setUser({
-    id: user.id?.toString(),
-    // E-Mail NICHT senden (GDPR)
-    // email: user.email,
-  });
+  
+  app.use(Sentry.Handlers.errorHandler());
+  console.log('✅ Sentry: Error handler registered');
 }
 
-export default Sentry;
+/**
+ * Manuelles Error-Capture
+ */
+export function captureException(error, context = {}) {
+  if (!Sentry) {
+    console.error('Error (Sentry not installed):', error);
+    return;
+  }
+  
+  Sentry.captureException(error, {
+    extra: context
+  });
+}
