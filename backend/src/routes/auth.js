@@ -223,11 +223,21 @@ router.put('/profile', authenticateToken, validate(profileSchema), asyncHandler(
 
 /**
  * POST /api/auth/update-language
- * TEMPORÄRE ROUTE: Nur Sprache ändern (Workaround für Railway Deploy-Problem)
+ * Sprache des Benutzers ändern
  */
 router.post('/update-language', authenticateToken, asyncHandler(async (req, res) => {
   const { language } = req.body;
-  const userId = req.user.id;
+  const userId = req.user.userId || req.user.id;
+  
+  // Debug logs
+  logger.info(`👤 User from token:`, req.user);
+  logger.info(`🆔 Using userId: ${userId}`);
+  
+  // Validierung: userId muss vorhanden sein
+  if (!userId) {
+    logger.error('❌ No userId found in token:', req.user);
+    return sendError(res, 401, ERROR_CODES.UNAUTHORIZED, 'Benutzer-ID nicht gefunden im Token');
+  }
   
   // Validiere language
   if (!language || !['de', 'en', 'fr', 'es', 'it'].includes(language)) {
